@@ -13,8 +13,8 @@ CREATE TABLE books(
 	
 );
 
--- -- ALTER TABLE books
--- -- ALTER COLUMN edition TYPE VARCHAR(20);
+-- ALTER TABLE books
+-- ALTER COLUMN edition TYPE VARCHAR(20);
 
 -- ALTER TABLE books
 -- ALTER COLUMN format TYPE CHAR(20)
@@ -24,6 +24,7 @@ CREATE TABLE books(
 
 -- ALTER TABLE books
 -- ALTER COLUMN lan_guage TYPE CHAR(20);
+
 
 
 
