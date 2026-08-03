@@ -74,5 +74,5 @@ INSERT INTO book_publication_create (book_id, publication_id) VALUES
 (73, 11),
 (74, 12),
 (75, 13);
-select *
-from book_publication_create
+-- select *
+-- from book_publication_create

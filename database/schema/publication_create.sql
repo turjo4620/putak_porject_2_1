@@ -7,5 +7,5 @@ cover_image_url VARCHAR(255)
 
 )
 
-Select *
-From publications
+-- Select *
+-- From publications
