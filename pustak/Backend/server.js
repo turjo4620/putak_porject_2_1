@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Base route
 app.get('/', (req, res) => {
-    res.json({ message: "Welcome to the E-commerce API!" });
+    res.json({ message: "Welcome to the API!" });
 });
 
 // Database test route
