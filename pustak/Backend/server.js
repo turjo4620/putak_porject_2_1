@@ -34,3 +34,11 @@ app.get('/api/test-db', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
+const authorRoutes = require('./src/routes/authorRoutes');
+app.use('/api/authors', authorRoutes);
+
+
+const bookRoutes = require('./src/routes/bookRoutes');
+app.use('/api/books', bookRoutes);

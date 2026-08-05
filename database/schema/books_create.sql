@@ -4,7 +4,6 @@ CREATE TABLE books(
 	title VARCHAR(250) NOT NULL,
 	edition VARCHAR(20) NOT NULL,
 	lan_guage CHAR(50),
-	format CHAR(20),
 	stock INT NOT NULL,
 	description VARCHAR(1000),
 	cover_image_url CHAR(250),
