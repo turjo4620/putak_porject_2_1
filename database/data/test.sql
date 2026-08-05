@@ -21,3 +21,4 @@ CREATE TABLE books (
 SELECT * FROM books
 
 SELECT description FROM books
+
