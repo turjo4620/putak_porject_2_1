@@ -1,48 +1,68 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { authors } from '../data/books'
+import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import './ListPage.css'
 import './AuthorsPage.css'
 
 export default function AuthorsPage() {
-  const navigate = useNavigate()
+  const [authors, setAuthors] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Build unique author list from all data
-  const allAuthors = [
-    ...authors,
-    { id: 2, name: 'মুহম্মদ জাফর ইকবাল', books: 80, avatar: 'জা', genre: 'বিজ্ঞান কল্পকাহিনী' },
-    { id: 3, name: 'সুনীল গঙ্গোপাধ্যায়', books: 120, avatar: 'সু', genre: 'উপন্যাস, কবিতা' },
-    { id: 4, name: 'রবীন্দ্রনাথ ঠাকুর',   books: 300, avatar: 'র',  genre: 'কবিতা, উপন্যাস' },
-    { id: 5, name: 'জাহানারা ইমাম',        books: 15,  avatar: 'জা', genre: 'ইতিহাস, স্মৃতিকথা' },
-    { id: 6, name: 'আনিসুল হক',            books: 60,  avatar: 'আ',  genre: 'উপন্যাস, নাটক' },
-  ]
+  useEffect(() => {
+    fetch('http://localhost:5000/api/authors')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) {
+          setAuthors(json.data)
+        }
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error("Fetch error:", err)
+        setLoading(false)
+      })
+  }, [])
 
   return (
     <div className="list-page">
       <div className="container">
+
         <div className="list-page__header">
-          <p className="list-page__breadcrumb"><Link to="/">হোম</Link> › লেখক</p>
-          <h1 className="list-page__title">সকল লেখক</h1>
-          <p className="list-page__count">{allAuthors.length} জন লেখক</p>
+          <p className="list-page__breadcrumb">
+            <Link to="/">হোম</Link> › লেখক
+          </p>
+          <h1>সকল লেখক</h1>
+          <p className="list-page__subtitle">
+            {loading ? 'লোড হচ্ছে...' : `${authors.length} জন লেখক`}
+          </p>
         </div>
+
         <div className="authors-grid">
-          {allAuthors.map((a) => (
-            <div
-              key={a.id}
-              className="author-card"
-              onClick={() => navigate(`/author/${encodeURIComponent(a.name)}`)}
-              role="button"
-              tabIndex={0}
-              aria-label={a.name}
-            >
-              <div className="author-card__avatar">{a.avatar}</div>
-              <div className="author-card__info">
-                <strong>{a.name}</strong>
-                <span>{a.genre}</span>
-                <em>{a.books}+ বই</em>
-              </div>
-            </div>
-          ))}
+          {loading ? (
+            <p style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '2rem' }}>
+              লেখকদের তথ্য লোড হচ্ছে...
+            </p>
+          ) : (
+            authors.map((author) => (
+              <Link
+                to={`/author/${author.author_id}`}
+                key={author.author_id}
+                className="author-card-link"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div className="author-card">
+                  <div className="author-card__avatar">
+                    {author.name ? author.name.charAt(0) : '?'}
+                  </div>
+                  <div className="author-card__info">
+                    <h3 className="author-card__name">{author.name}</h3>
+                    <p className="author-card__count">{author.count} বই</p>
+                  </div>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
+
       </div>
     </div>
   )

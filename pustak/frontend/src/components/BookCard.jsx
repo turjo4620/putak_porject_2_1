@@ -21,7 +21,7 @@ export default function BookCard({ book, size = 'default' }) {
   const price = book.price || 0;
   
   // Safe defaults for UI features not in the DB yet
-  const category = book.category || 'বই';
+  const category = book.category || null;
   const rating = book.rating || 0;
   const reviews = book.reviews || 0;
   const inStock = book.inStock !== false; // defaults to true
@@ -122,7 +122,7 @@ export default function BookCard({ book, size = 'default' }) {
 
       {/* Info */}
       <div className="book-card__info">
-        <span className="book-card__category">{category}</span>
+        {category && <span className="book-card__category">{category}</span>}
         <h3 className="book-card__title">{title}</h3>
         <p className="book-card__author">{author}</p>
 
