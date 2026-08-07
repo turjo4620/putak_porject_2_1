@@ -1,23 +1,28 @@
 const pool = require('../config/db');
 
 const getAllAuthors = async () => {
-    const result = await pool.query(
-        'SELECT * FROM authors ORDER BY author_id ASC'
-    );
+    const query = `
+        SELECT 
+            authors.author_id, 
+            authors.name, 
+            COUNT(book_author.book_id) AS count
+        FROM authors
+        LEFT JOIN book_author ON authors.author_id = book_author.author_id
+        GROUP BY authors.author_id
+        ORDER BY count DESC
+    `;
+    const result = await pool.query(query);
     return result.rows;
 };
 
-
-
-const getAuthorByID = async(id) =>{
+const getAuthorByID = async (id) => {
     const result = await pool.query(
         'SELECT * FROM authors WHERE author_id = $1', [id]
     );
-    // specific row needed
-    return result.rows[0]; 
-
-}
+    return result.rows[0];
+};
 
 module.exports = { 
     getAllAuthors,
-    getAuthorByID };
+    getAuthorByID 
+};

@@ -58,7 +58,11 @@ export default function App() {
             <Route path="/new-arrivals"      element={<NewArrivalsPage />} />
             <Route path="/offers"            element={<OffersPage />} />
             <Route path="/authors"           element={<AuthorsPage />} />
-            <Route path="/author/:name"      element={<AuthorPage />} />
+            {/* 
+              Swapped :name for :id below! 
+              Now React Router knows to pass the ID number to AuthorPage.jsx 
+            */}
+            <Route path="/author/:id"        element={<AuthorPage />} />
             <Route path="/publishers"        element={<PublishersPage />} />
             <Route path="/publisher/:name"   element={<PublishersPage />} />
             <Route path="/checkout"          element={<CheckoutPage />} />
