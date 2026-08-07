@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 /* ============================================
    পুস্তক — Global Design System
    ============================================ */
@@ -29,7 +31,7 @@
 
   /* ── Typography ── */
   --font-serif:   'Noto Serif Bengali', 'Tiro Bangla', serif;
-  --font-sans:    'Hind Siliguri', sans-serif;
+  --font-sans:    'Hind Siliguri', 'Noto Serif Bengali', 'Tiro Bangla', sans-serif;
 
   /* ── Spacing Scale ── */
   --space-1:  0.25rem;
