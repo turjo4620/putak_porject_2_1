@@ -1,0 +1,61 @@
+.reviews { background: var(--bg-secondary); }
+
+.reviews__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+@media (max-width: 900px) { .reviews__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .reviews__grid { grid-template-columns: 1fr; } }
+
+.review-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  backdrop-filter: blur(10px);
+}
+.review-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+.review-card__header {
+  display: flex; align-items: center; gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.review-card__avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-forest), var(--color-forest-light));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-sans); font-weight: 700; font-size: 0.85rem;
+  color: white; flex-shrink: 0;
+}
+.review-card__info { flex: 1; min-width: 0; }
+.review-card__name {
+  display: block; font-size: 0.9rem; font-weight: 700;
+  color: var(--text-primary); font-family: var(--font-sans);
+}
+.review-card__location {
+  font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-sans);
+}
+.review-card__stars { display: flex; gap: 2px; flex-shrink: 0; }
+
+.review-card__text {
+  font-size: 0.9rem; color: var(--text-secondary);
+  font-family: var(--font-sans); line-height: 1.7;
+  margin-bottom: var(--space-4);
+  font-style: italic;
+}
+
+.review-card__footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.review-card__book {
+  font-size: 0.78rem; font-weight: 600; color: var(--accent);
+  font-family: var(--font-sans);
+}
+.review-card__date {
+  font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-sans);
+}

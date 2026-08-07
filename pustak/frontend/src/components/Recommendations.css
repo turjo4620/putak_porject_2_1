@@ -1,0 +1,35 @@
+.reco__tabs {
+  display: flex; align-items: center; gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-8);
+}
+.reco__tab {
+  font-family: var(--font-sans);
+  font-size: 0.85rem; font-weight: 500;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+}
+.reco__tab:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.reco__tab--active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.reco__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+.reco__item {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reco__grid--visible .reco__item { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 1024px) { .reco__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px)  { .reco__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .reco__grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-4); } }

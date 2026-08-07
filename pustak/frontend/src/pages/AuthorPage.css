@@ -1,0 +1,19 @@
+.author-profile {
+  display: flex; align-items: center; gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+.author-profile__avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-forest), var(--color-forest-light));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif); font-size: 2rem; font-weight: 900; color: white;
+  flex-shrink: 0;
+}
+.author-profile__name {
+  font-family: var(--font-serif); font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800; color: var(--text-primary);
+}
+.author-profile__count {
+  font-size: 0.9rem; color: var(--text-muted); font-family: var(--font-sans);
+  margin-top: var(--space-1);
+}

@@ -1,0 +1,40 @@
+.notfound {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-6);
+  background: var(--bg-primary);
+}
+.notfound__content {
+  text-align: center; max-width: 480px;
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+}
+.notfound__icon { font-size: 5rem; }
+.notfound__code {
+  font-family: var(--font-serif); font-size: 6rem; font-weight: 900;
+  color: var(--border-color); line-height: 1; letter-spacing: -0.05em;
+}
+.notfound__title {
+  font-family: var(--font-serif); font-size: 1.8rem; font-weight: 800;
+  color: var(--text-primary);
+}
+.notfound__text {
+  font-size: 1rem; color: var(--text-secondary);
+  font-family: var(--font-sans); line-height: 1.7;
+}
+.notfound__actions {
+  display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center;
+  margin-top: var(--space-4);
+}
+.notfound__btn {
+  font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600;
+  padding: var(--space-3) var(--space-8); border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+.notfound__btn--primary {
+  background: var(--color-charcoal); color: white;
+}
+.notfound__btn--primary:hover { background: var(--color-charcoal-80); transform: translateY(-2px); }
+.notfound__btn--ghost {
+  border: 1.5px solid var(--border-color); color: var(--text-secondary);
+}
+.notfound__btn--ghost:hover { border-color: var(--accent); color: var(--accent); }

@@ -1,0 +1,66 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-6);
+  background: var(--bg-primary);
+}
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10) var(--space-8);
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+}
+.auth-logo {
+  font-family: var(--font-serif); font-size: 1.8rem; font-weight: 900;
+  color: var(--text-primary); letter-spacing: 0.02em;
+}
+.auth-title {
+  font-family: var(--font-serif); font-size: 1.6rem; font-weight: 800;
+  color: var(--text-primary); text-align: center;
+}
+.auth-sub {
+  font-size: 0.88rem; color: var(--text-muted); font-family: var(--font-sans);
+  margin-top: -var(--space-2);
+}
+.auth-form {
+  width: 100%; display: flex; flex-direction: column; gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+.auth-field {
+  display: flex; flex-direction: column; gap: var(--space-1);
+}
+.auth-field label {
+  font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+.auth-field input {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem; color: var(--text-primary);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.auth-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(30,58,47,0.08);
+}
+.auth-btn {
+  width: 100%; padding: var(--space-3);
+  background: var(--color-charcoal); color: white;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans); font-size: 1rem; font-weight: 700;
+  transition: all var(--transition-fast);
+  margin-top: var(--space-2);
+}
+.auth-btn:hover { background: var(--color-charcoal-80); transform: translateY(-1px); }
+[data-theme="dark"] .auth-btn { background: var(--color-cream); color: var(--color-charcoal); }
+.auth-switch {
+  font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-sans);
+}
+.auth-switch a { color: var(--accent); font-weight: 600; }

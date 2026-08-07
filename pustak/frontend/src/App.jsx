@@ -1,56 +1,75 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import Navbar from './components/layout/Navbar'
-import Footer from './components/layout/Footer'
-import SmoothScroll from './components/layout/SmoothScroll'
-import CustomCursor from './components/layout/CustomCursor'
-import Home from './pages/Home'
-import Books from './pages/Books'
-import BookDetails from './pages/BookDetails'
-import AuthorsPage from './pages/AuthorsPage'
-import CategoriesPage from './pages/CategoriesPage'
+import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, ScrollRestoration, useLocation } from 'react-router-dom'
+import './styles/App.css'
 
-function PageWrapper({ children }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
-    >
-      {children}
-    </motion.div>
-  )
+import { AppProvider } from './context/AppContext'
+import Navigation from './components/Navigation'
+import Footer from './components/Footer'
+
+import HomePage        from './pages/HomePage'
+import BookDetailPage  from './pages/BookDetailPage'
+import SearchPage      from './pages/SearchPage'
+import CategoryPage    from './pages/CategoryPage'
+import BestSellersPage from './pages/BestSellersPage'
+import NewArrivalsPage from './pages/NewArrivalsPage'
+import OffersPage      from './pages/OffersPage'
+import AuthorsPage     from './pages/AuthorsPage'
+import AuthorPage      from './pages/AuthorPage'
+import PublishersPage  from './pages/PublishersPage'
+import CheckoutPage    from './pages/CheckoutPage'
+import LoginPage       from './pages/LoginPage'
+import RegisterPage    from './pages/RegisterPage'
+import NotFoundPage    from './pages/NotFoundPage'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [pathname])
+  return null
 }
 
-function AppRoutes() {
-  const location = useLocation()
-
+function Layout({ children, isDarkMode, toggleDarkMode }) {
   return (
-    <>
-      <Navbar />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
-          <Route path="/books" element={<PageWrapper><Books /></PageWrapper>} />
-          <Route path="/books/:id" element={<PageWrapper><BookDetails /></PageWrapper>} />
-          <Route path="/authors" element={<PageWrapper><AuthorsPage /></PageWrapper>} />
-          <Route path="/categories" element={<PageWrapper><CategoriesPage /></PageWrapper>} />
-          <Route path="*" element={<PageWrapper><Home /></PageWrapper>} />
-        </Routes>
-      </AnimatePresence>
+    <div className="app">
+      <Navigation isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <main>{children}</main>
       <Footer />
-    </>
+    </div>
   )
 }
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : '')
+  }, [isDarkMode])
+
   return (
     <BrowserRouter>
-      <SmoothScroll>
-        <CustomCursor />
-        <AppRoutes />
-      </SmoothScroll>
+      <AppProvider>
+        <ScrollToTop />
+        <Layout isDarkMode={isDarkMode} toggleDarkMode={() => setIsDarkMode(!isDarkMode)}>
+          <Routes>
+            <Route path="/"                  element={<HomePage />} />
+            <Route path="/book/:id"          element={<BookDetailPage />} />
+            <Route path="/search"            element={<SearchPage />} />
+            <Route path="/category/:id"      element={<CategoryPage />} />
+            <Route path="/bestsellers"       element={<BestSellersPage />} />
+            <Route path="/new-arrivals"      element={<NewArrivalsPage />} />
+            <Route path="/offers"            element={<OffersPage />} />
+            <Route path="/authors"           element={<AuthorsPage />} />
+            <Route path="/author/:name"      element={<AuthorPage />} />
+            <Route path="/publishers"        element={<PublishersPage />} />
+            <Route path="/publisher/:name"   element={<PublishersPage />} />
+            <Route path="/checkout"          element={<CheckoutPage />} />
+            <Route path="/login"             element={<LoginPage />} />
+            <Route path="/register"          element={<RegisterPage />} />
+            <Route path="/orders"            element={<LoginPage />} />
+            <Route path="/settings"          element={<LoginPage />} />
+            <Route path="*"                  element={<NotFoundPage />} />
+          </Routes>
+        </Layout>
+      </AppProvider>
     </BrowserRouter>
   )
 }
