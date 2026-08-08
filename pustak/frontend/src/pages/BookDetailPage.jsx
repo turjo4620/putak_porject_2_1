@@ -1,22 +1,52 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState } from 'react'
-import { ArrowLeft, Heart, ShoppingBag, Star, BookOpen, Share2, Check } from 'lucide-react'
-import { bestSellers, newReleases } from '../data/books'
+import { useState, useEffect } from 'react'
+import { ArrowLeft, Heart, ShoppingBag, Star, Share2, Check } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import BookCard from '../components/BookCard'
 import './BookDetailPage.css'
-
-const allBooks = [...bestSellers, ...newReleases]
 
 export default function BookDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart, toggleWish, isWished, isInCart } = useApp()
 
-  const book = allBooks.find((b) => b.id === Number(id))
+  const [book, setBook] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [related, setRelated] = useState([])
+  const [moreByAuthor, setMoreByAuthor] = useState([])
+
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`http://localhost:5000/api/books/${id}`)
+        
+        if (res.ok) {
+          const data = await res.json()
+          setBook(data)
+        } else {
+          setBook(null)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBook()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="book-detail__notfound">
+        <h2>লোড হচ্ছে...</h2>
+      </div>
+    )
+  }
 
   if (!book) {
     return (
@@ -27,11 +57,35 @@ export default function BookDetailPage() {
     )
   }
 
+  // Real Database Column Mappings
+  const category = book.category || 'সাধারণ'
+  const publisher = book.publisher || 'অজ্ঞাত প্রকাশক'
+  const rating = book.rating ? Number(book.rating) : 0
+  const reviews = book.num_reviews || 0
+  const language = book.language || 'বাংলা'
+  const numPages = book.num_pages || 'অজ্ঞাত'
+  const edition = book.edition || '১ম সংস্করণ'
+  const isbn = book.isbn || 'প্রযোজ্য নয়'
+  const description = (book.description || 'এই বইটির কোনো বিবরণ দেওয়া নেই।')
+  .replace(/show more/gi, '')
+  .replace(/আরো পড়ুন/g, '')
+  .replace(/আরও দেখুন/g, '')
+  .trim()
+  const coverUrl = book.cover_image_url ? book.cover_image_url.replace('w=300&h=420', 'w=500&h=700') : ''
+  
+  // Stock handling based on your availability column
+  const inStock = book.availability !== 'Out of stock' && book.availability !== 'Unavailable'
+  
+  // Pricing logic (If discount_price exists, show price as crossed out)
+  const currentPrice = book.discount_price || book.price
+  const originalPrice = book.discount_price && book.discount_price < book.price ? book.price : null
+  const discountPct = book.discount_percentage
+
   const wished = isWished(book.id)
   const inCart = isInCart(book.id)
 
   const handleCart = () => {
-    addToCart({ ...book, qty })
+    addToCart({ ...book, qty, title: book.book_name, cover: book.cover_image_url, price: currentPrice })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -43,45 +97,35 @@ export default function BookDetailPage() {
     })
   }
 
-  const related = allBooks.filter((b) => b.id !== book.id && b.category === book.category).slice(0, 4)
-  const moreByAuthor = allBooks.filter((b) => b.id !== book.id && b.author === book.author).slice(0, 4)
-
   return (
     <div className="book-detail">
       <div className="container">
-        {/* Breadcrumb */}
+        
         <nav className="book-detail__breadcrumb" aria-label="পথ চিহ্ন">
           <button className="book-detail__back" onClick={() => navigate(-1)} aria-label="পিছনে যান">
             <ArrowLeft size={16} />
           </button>
           <Link to="/">হোম</Link>
           <span aria-hidden="true">›</span>
-          <Link to={`/category/${book.category}`}>{book.category}</Link>
+          <Link to={`/category/${category}`}>{category}</Link>
           <span aria-hidden="true">›</span>
-          <span aria-current="page">{book.title}</span>
+          <span aria-current="page">{book.book_name}</span>
         </nav>
 
-        {/* Main layout */}
         <div className="book-detail__layout">
-          {/* Left: Cover */}
+          
           <div className="book-detail__cover-col">
             <div className="book-detail__cover-wrap">
               <div className="book-detail__cover">
-                <img src={book.cover.replace('w=300&h=420', 'w=500&h=700')} alt={`${book.title} বইয়ের প্রচ্ছদ`} />
+                <img src={coverUrl} alt={`${book.book_name} বইয়ের প্রচ্ছদ`} />
                 <div className="book-detail__spine" aria-hidden="true" />
               </div>
-              {book.badge && (
-                <span className="book-detail__badge" style={{ background: book.badgeColor }}>
-                  {book.badge}
-                </span>
-              )}
             </div>
 
-            {/* Actions below cover */}
             <div className="book-detail__cover-actions">
               <button
                 className={`book-detail__wish-btn ${wished ? 'book-detail__wish-btn--active' : ''}`}
-                onClick={() => toggleWish(book)}
+                onClick={() => toggleWish({ ...book, title: book.book_name, cover: book.cover_image_url, price: currentPrice })}
                 aria-label={wished ? 'উইশলিস্ট থেকে সরান' : 'উইশলিস্টে যোগ করুন'}
                 aria-pressed={wished}
               >
@@ -99,43 +143,38 @@ export default function BookDetailPage() {
             </div>
           </div>
 
-          {/* Right: Info */}
           <div className="book-detail__info-col">
-            <span className="book-detail__category">{book.category}</span>
-            <h1 className="book-detail__title">{book.title}</h1>
+            <span className="book-detail__category">{category}</span>
+            <h1 className="book-detail__title">{book.book_name}</h1>
             <p className="book-detail__author">
               লেখক: <Link to={`/author/${encodeURIComponent(book.author)}`} className="book-detail__author-link">{book.author}</Link>
             </p>
-            <p className="book-detail__publisher">প্রকাশক: <strong>{book.publisher}</strong></p>
+            <p className="book-detail__publisher">প্রকাশক: <strong>{publisher}</strong></p>
 
-            {/* Rating */}
-            <div className="book-detail__rating" aria-label={`রেটিং ${book.rating}`}>
+            <div className="book-detail__rating" aria-label={`রেটিং ${rating}`}>
               <span className="book-detail__stars" aria-hidden="true">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={16} className={i < Math.floor(book.rating) ? 'star--filled' : 'star--empty'} fill={i < Math.floor(book.rating) ? '#e8a020' : 'none'} />
+                  <Star key={i} size={16} className={i < Math.floor(rating) ? 'star--filled' : 'star--empty'} fill={i < Math.floor(rating) ? '#e8a020' : 'none'} />
                 ))}
               </span>
-              <strong>{book.rating}</strong>
-              <span className="book-detail__review-count">({book.reviews.toLocaleString('bn-BD')} রিভিউ)</span>
+              <strong>{rating}</strong>
+              <span className="book-detail__review-count">({reviews.toLocaleString('bn-BD')} রিভিউ)</span>
             </div>
 
-            {/* Price */}
             <div className="book-detail__price-block">
-              <strong className="book-detail__price">৳{book.price}</strong>
-              {book.originalPrice && (
+              <strong className="book-detail__price">৳{currentPrice}</strong>
+              {originalPrice && (
                 <>
-                  <s className="book-detail__original">৳{book.originalPrice}</s>
-                  <span className="book-detail__discount-pill">{book.discount}% ছাড়</span>
+                  <s className="book-detail__original">৳{originalPrice}</s>
+                  {discountPct && <span className="book-detail__discount-pill">{discountPct} ছাড়</span>}
                 </>
               )}
             </div>
 
-            {/* Stock */}
-            <div className={`book-detail__stock ${book.inStock ? 'book-detail__stock--in' : 'book-detail__stock--out'}`}>
-              {book.inStock ? '✓ স্টকে আছে' : '✗ স্টক নেই'}
+            <div className={`book-detail__stock ${inStock ? 'book-detail__stock--in' : 'book-detail__stock--out'}`}>
+              {inStock ? '✓ স্টকে আছে' : '✗ স্টক নেই'}
             </div>
 
-            {/* Qty + Cart */}
             <div className="book-detail__buy-row">
               <div className="book-detail__qty" aria-label="পরিমাণ">
                 <button
@@ -152,7 +191,7 @@ export default function BookDetailPage() {
               <button
                 className={`book-detail__cart-btn ${inCart ? 'book-detail__cart-btn--in' : ''} ${added ? 'book-detail__cart-btn--added' : ''}`}
                 onClick={handleCart}
-                disabled={!book.inStock}
+                disabled={!inStock}
                 aria-label="কার্টে যোগ করুন"
               >
                 <ShoppingBag size={18} />
@@ -160,62 +199,35 @@ export default function BookDetailPage() {
               </button>
             </div>
 
-            <button className="book-detail__buy-now-btn" disabled={!book.inStock}>
+            <button className="book-detail__buy-now-btn" disabled={!inStock}>
               এখনই কিনুন
             </button>
 
-            {/* Book meta */}
             <div className="book-detail__meta-grid">
               <div className="book-detail__meta-item">
                 <span>ভাষা</span>
-                <strong>বাংলা</strong>
+                <strong>{language}</strong>
               </div>
               <div className="book-detail__meta-item">
                 <span>পৃষ্ঠা</span>
-                <strong>২৮৪</strong>
+                <strong>{numPages}</strong>
               </div>
               <div className="book-detail__meta-item">
                 <span>সংস্করণ</span>
-                <strong>৩য় সংস্করণ</strong>
+                <strong>{edition}</strong>
               </div>
               <div className="book-detail__meta-item">
                 <span>ISBN</span>
-                <strong>978-984-XX-XXXX</strong>
+                <strong>{isbn}</strong>
               </div>
             </div>
 
-            {/* Description */}
             <div className="book-detail__desc">
               <h3>বই সম্পর্কে</h3>
-              <p>
-                {book.title} বাংলা সাহিত্যের একটি অমর কীর্তি। {book.author} এর অসাধারণ
-                লেখনীতে উঠে এসেছে বাংলার মানুষের জীবন, স্বপ্ন ও সংগ্রামের কথা।
-                প্রতিটি পাতায় পাঠক খুঁজে পাবেন নিজের প্রতিফলন, হাসবেন, কাঁদবেন
-                এবং ভাববেন। এই বইটি প্রতিটি বাড়ির বুকশেলফে থাকা উচিত।
-              </p>
+              <p>{description}</p>
             </div>
           </div>
         </div>
-
-        {/* Related Books */}
-        {related.length > 0 && (
-          <div className="book-detail__related">
-            <h2 className="book-detail__section-title">একই বিভাগের আরও বই</h2>
-            <div className="book-detail__related-grid">
-              {related.map((b) => <BookCard key={b.id} book={b} size="small" />)}
-            </div>
-          </div>
-        )}
-
-        {/* More by author */}
-        {moreByAuthor.length > 0 && (
-          <div className="book-detail__related">
-            <h2 className="book-detail__section-title">{book.author} এর আরও বই</h2>
-            <div className="book-detail__related-grid">
-              {moreByAuthor.map((b) => <BookCard key={b.id} book={b} size="small" />)}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

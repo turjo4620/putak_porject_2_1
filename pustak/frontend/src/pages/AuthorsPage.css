@@ -21,12 +21,6 @@
   box-shadow: var(--shadow-md);
   border-color: var(--accent);
 }
-.author-card__avatar {
-  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-forest), var(--color-forest-light));
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-serif); font-size: 1.4rem; font-weight: 900; color: white;
-}
 .author-card__info {
   display: flex; flex-direction: column; gap: 2px;
 }
@@ -41,3 +35,34 @@
   font-size: 0.72rem; color: var(--accent); font-family: var(--font-sans);
   font-style: normal; font-weight: 600; margin-top: 2px;
 }
+
+/* 1. Force the wrapper container to be 90px round */
+.author-card__avatar {
+  width: 90px !important;
+  height: 90px !important;
+  min-width: 90px !important;
+  max-width: 90px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+  background-color: #1a4d2e !important;
+  color: white !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-size: 2.5rem !important; /* Made the initial text a bit bigger to match */
+  font-weight: bold !important;
+  overflow: hidden !important;
+}
+
+/* 2. Force the image to crop perfectly into that 90px circle */
+.author-avatar-image,
+.author-card__avatar img {
+  width: 90px !important;
+  height: 90px !important;
+  min-width: 90px !important;
+  max-width: 90px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+

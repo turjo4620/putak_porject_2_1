@@ -7,9 +7,16 @@ const getBooks = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    // Query
+    // Query (Added discount_price and discount_percentage)
     const query = `
-      SELECT books.id, books.book_name, books.cover_image_url, books.price, authors.name AS author 
+      SELECT 
+        books.id, 
+        books.book_name, 
+        books.cover_image_url, 
+        books.price, 
+        books.discount_price,
+        books.discount_percentage,
+        authors.name AS author 
       FROM books 
       JOIN book_author ON books.id = book_author.book_id
       JOIN authors ON book_author.author_id = authors.author_id
@@ -48,12 +55,19 @@ const searchBooks = async (req, res) => {
     const offset = (page - 1) * limit;
 
     // Term (trim removes any hidden spaces)
-const searchTerm = req.query.q ? req.query.q.trim() : '';
+    const searchTerm = req.query.q ? req.query.q.trim() : '';
     const searchPattern = `%${searchTerm.split(/\s+/).join('%')}%`;
 
-    // Query (Changed ILIKE to LIKE for Bengali text support)
+    // Query (Added discount columns & kept LIKE for Bengali)
     const query = `
-      SELECT books.id, books.book_name, books.cover_image_url, books.price, authors.name AS author
+      SELECT 
+        books.id, 
+        books.book_name, 
+        books.cover_image_url, 
+        books.price, 
+        books.discount_price,
+        books.discount_percentage,
+        authors.name AS author
       FROM books
       JOIN book_author ON books.id = book_author.book_id
       JOIN authors ON book_author.author_id = authors.author_id
@@ -65,7 +79,7 @@ const searchTerm = req.query.q ? req.query.q.trim() : '';
     // Execute Books
     const { rows } = await pool.query(query, [searchPattern, limit, offset]);
 
-    // Query for Total Count (Changed ILIKE to LIKE here too)
+    // Query for Total Count
     const countQuery = `
       SELECT COUNT(*) 
       FROM books
@@ -109,14 +123,31 @@ const getBooksByAuthor = async (req, res) => {
     }
     const authorName = authorResult.rows[0].name;
 
-    // 2. Get their books
+    // 2. Get their books (MAGIC ORDER BY statement + discount columns)
     const bookQuery = `
-      SELECT books.id, books.book_name, books.cover_image_url, books.price, authors.name AS author
+      SELECT 
+        books.id, 
+        books.book_name, 
+        books.cover_image_url, 
+        books.price, 
+        books.discount_price,
+        books.discount_percentage,
+        authors.name AS author
       FROM books
       JOIN book_author ON books.id = book_author.book_id
       JOIN authors ON book_author.author_id = authors.author_id
       WHERE authors.author_id = $1
-      ORDER BY books.id ASC
+      ORDER BY 
+        CASE 
+          WHEN books.book_name LIKE '%কালেকশন%' THEN 1
+          WHEN books.book_name LIKE '%বক্সসেট%' THEN 1
+          WHEN books.book_name LIKE '%প্যাকেজ%' THEN 1
+          WHEN books.book_name LIKE '%সমগ্র%' THEN 1
+          WHEN books.book_name LIKE '%রচনাবলি%' THEN 1
+          WHEN books.book_name LIKE '%টি বই%' THEN 1
+          ELSE 0 
+        END ASC,
+        books.id ASC
       LIMIT $2 OFFSET $3
     `;
     const { rows } = await pool.query(bookQuery, [authorId, limit, offset]);
@@ -141,8 +172,53 @@ const getBooksByAuthor = async (req, res) => {
   }
 };
 
+const getBookById = async (req, res) => {
+  try {
+    const bookId = parseInt(req.params.id);
+
+    // Fetching ALL the columns from your specific schema!
+    const query = `
+      SELECT 
+        books.id, 
+        books.book_name, 
+        books.cover_image_url, 
+        books.price, 
+        books.discount_price,
+        books.discount_percentage,
+        books.publisher,
+        books.category,
+        books.isbn,
+        books.language,
+        books.num_pages,
+        books.edition,
+        books.rating,
+        books.num_reviews,
+        books.availability,
+        books.description,
+        authors.name AS author
+      FROM books
+      LEFT JOIN book_author ON books.id = book_author.book_id
+      LEFT JOIN authors ON book_author.author_id = authors.author_id
+      WHERE books.id = $1
+    `;
+    
+    const { rows } = await pool.query(query, [bookId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+
+    res.status(200).json(rows[0]);
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error fetching book" });
+  }
+};
+
 module.exports = {
     getBooks,
     searchBooks,
-    getBooksByAuthor
+    getBooksByAuthor,
+    getBookById
 }
