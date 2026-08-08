@@ -1,5 +1,71 @@
-/* ── Author Page: books grid + pagination spacing ── */
+/* ── Main Container (Push down for fixed navbar) ── */
+.author-page { 
+  padding-top: 70px; 
+}
 
+@media (min-width: 768px) {
+  .author-page {
+    padding-top: 100px; 
+  }
+}
+
+/* ── Author Profile Header & Avatar ── */
+.author-page__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 2rem;
+  margin-top: 1rem;
+}
+
+.author-page__avatar {
+  width: 120px !important;
+  height: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  border-radius: 50% !important;
+  background-color: #1a4d2e !important;
+  color: white !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-size: 3.5rem !important;
+  font-weight: bold !important;
+  overflow: hidden !important;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.author-page__avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+.author-page__info h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.author-page__bio {
+  max-width: 800px;
+  margin: 0 auto 1rem auto;
+  color: #555;
+  line-height: 1.6;
+}
+
+.author-page__book-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* ── Author Page: books grid + pagination spacing ── */
 .author-page__books {
   margin-top: var(--space-6, 2.5rem);
   margin-bottom: var(--space-8, 4rem);
@@ -15,12 +81,6 @@
 .author-page__books-grid--loading {
   opacity: 0.4;
   pointer-events: none;
-}
-
-.author-page__book-count {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
 }
 
 /* ── Pagination ── */

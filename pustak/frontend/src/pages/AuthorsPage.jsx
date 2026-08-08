@@ -51,11 +51,18 @@ export default function AuthorsPage() {
               >
                 <div className="author-card">
                   <div className="author-card__avatar">
-                    {author.name ? author.name.charAt(0) : '?'}
+                    {author.photo_url ? (
+                      <img
+                        src={author.photo_url}
+                        alt={author.name}
+                        className="author-avatar-image"
+                      />
+                    ) : (
+                      author.name ? author.name.charAt(0) : '?'
+                    )}
                   </div>
                   <div className="author-card__info">
                     <h3 className="author-card__name">{author.name}</h3>
-                    <p className="author-card__count">{author.count} বই</p>
                   </div>
                 </div>
               </Link>

@@ -117,7 +117,11 @@ export default function AuthorPage() {
 
         <div className="author-page__header">
           <div className="author-page__avatar">
-            {author.name ? author.name.charAt(0) : '?'}
+            {author.photo_url ? (
+              <img src={author.photo_url} alt={author.name} />
+            ) : (
+              author.name ? author.name.charAt(0) : '?'
+            )}
           </div>
           <div className="author-page__info">
             <h1>{author.name}</h1>

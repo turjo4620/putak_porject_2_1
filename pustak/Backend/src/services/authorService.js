@@ -5,6 +5,7 @@ const getAllAuthors = async () => {
         SELECT 
             authors.author_id, 
             authors.name, 
+            authors.photo_url, 
             COUNT(book_author.book_id) AS count
         FROM authors
         LEFT JOIN book_author ON authors.author_id = book_author.author_id
@@ -14,7 +15,6 @@ const getAllAuthors = async () => {
     const result = await pool.query(query);
     return result.rows;
 };
-
 const getAuthorByID = async (id) => {
     const result = await pool.query(
         'SELECT * FROM authors WHERE author_id = $1', [id]
