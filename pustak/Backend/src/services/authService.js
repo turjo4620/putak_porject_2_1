@@ -9,10 +9,9 @@ const createAuthError = (message, code, status) => {
 };
 
 const ensureUsersTable = async () => {
-    // Create the users table on first use so the auth flow works even in a fresh database.
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
+            user_id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
@@ -50,7 +49,7 @@ const signupUser = async (name, email, password) => {
     await ensureUsersTable();
 
     const normalizedInput = normalizeSignupInput(name, email, password);
-    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedInput.email]);
+    const existingUser = await pool.query('SELECT user_id FROM users WHERE email = $1', [normalizedInput.email]);
 
     if (existingUser.rowCount > 0) {
         throw createAuthError('An account with this email already exists.', 'DUPLICATE_EMAIL', 409);
@@ -58,11 +57,12 @@ const signupUser = async (name, email, password) => {
 
     const passwordHash = await bcrypt.hash(normalizedInput.password, 12);
     const result = await pool.query(
-        'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
+        'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING user_id, name, email',
         [normalizedInput.name, normalizedInput.email, passwordHash]
     );
 
-    return result.rows[0];
+    const newUser = result.rows[0];
+    return { id: newUser.user_id, name: newUser.name, email: newUser.email };
 };
 
 const loginUser = async (email, password) => {
@@ -76,7 +76,7 @@ const loginUser = async (email, password) => {
     }
 
     const result = await pool.query(
-        'SELECT id, name, email, password_hash FROM users WHERE email = $1',
+        'SELECT user_id, name, email, password_hash FROM users WHERE email = $1',
         [cleanEmail]
     );
 
@@ -90,7 +90,7 @@ const loginUser = async (email, password) => {
         throw createAuthError('The password you entered is incorrect.', 'INVALID_CREDENTIALS', 401);
     }
 
-    return { id: user.id, name: user.name, email: user.email };
+    return { id: user.user_id, name: user.name, email: user.email };
 };
 
 module.exports = {

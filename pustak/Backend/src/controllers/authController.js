@@ -12,7 +12,6 @@ const createToken = (user) => {
 
 const signup = async (req, res) => {
     try {
-        // Validate and create the account, then immediately issue a signed token for the new user.
         const user = await authService.signupUser(req.body.name, req.body.email, req.body.password);
         const token = createToken(user);
 
@@ -34,7 +33,6 @@ const signup = async (req, res) => {
 
 const login = async (req, res) => {
     try {
-        // Only read from the database during login; no rows are created here.
         const user = await authService.loginUser(req.body.email, req.body.password);
         const token = createToken(user);
 
