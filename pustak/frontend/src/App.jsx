@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, ScrollRestoration, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import './styles/App.css'
 
 import { AppProvider } from './context/AppContext'
@@ -20,6 +20,13 @@ import CheckoutPage    from './pages/CheckoutPage'
 import LoginPage       from './pages/LoginPage'
 import RegisterPage    from './pages/RegisterPage'
 import NotFoundPage    from './pages/NotFoundPage'
+
+// Import the Account Dashboard components
+import AccountDashboardLayout from './pages/AccountDashboardLayout'
+import AccountProfileCard     from './pages/AccountProfileCard'
+import AccountOrders          from './pages/AccountOrders'
+import AccountWishlist        from './pages/AccountWishlist'
+import AccountReviews         from './pages/AccountReviews'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -68,6 +75,16 @@ export default function App() {
             <Route path="/checkout"          element={<CheckoutPage />} />
             <Route path="/login"             element={<LoginPage />} />
             <Route path="/register"          element={<RegisterPage />} />
+            
+            {/* --- NEW NESTED ACCOUNT ROUTES --- */}
+            <Route path="/account" element={<AccountDashboardLayout />}>
+              <Route index element={<AccountProfileCard />} /> 
+              <Route path="info" element={<AccountProfileCard />} />
+              <Route path="orders" element={<AccountOrders />} />
+              <Route path="wishlist" element={<AccountWishlist />} />
+              <Route path="reviews" element={<AccountReviews />} />
+            </Route>
+
             <Route path="/orders"            element={<LoginPage />} />
             <Route path="/settings"          element={<LoginPage />} />
             <Route path="*"                  element={<NotFoundPage />} />

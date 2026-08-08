@@ -40,10 +40,10 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Unable to create your account right now.')
       }
 
-      localStorage.setItem('pustak-auth-token', data.token)
-      localStorage.setItem('pustak-auth-user', JSON.stringify(data.user))
-      setMessage({ type: 'success', text: data.message })
-      navigate('/')
+      // registration succeeded; prompt user to login instead of automatically signing in
+      setMessage({ type: 'success', text: data.message || 'Registration successful. Please login.' })
+      // redirect to login so user can sign in
+      setTimeout(() => navigate('/login'), 700)
     } catch (error) {
       const friendlyMessage = error.message.includes('Unexpected token')
         ? 'The authentication service is unavailable. Make sure the backend is running.'

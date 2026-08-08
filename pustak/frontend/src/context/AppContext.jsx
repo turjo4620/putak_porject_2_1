@@ -11,7 +11,37 @@ export function AppProvider({ children }) {
   const [cartOpen, setCartOpen]     = useState(false)
   const [wishOpen, setWishOpen]     = useState(false)
   const [previewBook, setPreviewBook] = useState(null)
-  
+
+  // Auth (persisted to localStorage)
+  const [authUser, setAuthUserState] = useState(() => {
+    try {
+      const raw = localStorage.getItem('pustak-auth-user')
+      return raw ? JSON.parse(raw) : null
+    } catch (e) {
+      return null
+    }
+  })
+
+  const setAuthUser = (user) => {
+    try {
+      if (user) localStorage.setItem('pustak-auth-user', JSON.stringify(user))
+      else localStorage.removeItem('pustak-auth-user')
+    } catch (e) {
+      // ignore
+    }
+    setAuthUserState(user)
+  }
+
+  const signOut = () => {
+    try {
+      localStorage.removeItem('pustak-auth-user')
+      localStorage.removeItem('pustak-auth-token')
+    } catch (e) {
+      // ignore
+    }
+    setAuthUserState(null)
+  }
+
   // Database
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +109,9 @@ export function AppProvider({ children }) {
       wishOpen, setWishOpen,
       previewBook, setPreviewBook,
       totalCartPrice,
-      books, loading, pagination, fetchBooks
+      books, loading, pagination, fetchBooks,
+      // Auth
+      authUser, setAuthUser, signOut
     }}>
       {children}
     </AppContext.Provider>

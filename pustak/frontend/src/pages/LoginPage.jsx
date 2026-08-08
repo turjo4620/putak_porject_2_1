@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
 import './AuthPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
@@ -17,6 +18,7 @@ async function parseApiResponse(response) {
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { setAuthUser } = useApp()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
@@ -41,9 +43,11 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('pustak-auth-token', data.token)
-      localStorage.setItem('pustak-auth-user', JSON.stringify(data.user))
+      // update app context so navigation shows user menu
+      setAuthUser(data.user)
       setMessage({ type: 'success', text: data.message })
-      navigate('/')
+      // show success briefly then navigate home so user sees message and navigation opens account drawer
+      setTimeout(() => navigate('/'), 700)
     } catch (error) {
       const friendlyMessage = error.message.includes('Unexpected token')
         ? 'The authentication service is unavailable. Make sure the backend is running.'

@@ -33,7 +33,7 @@ const trendingSearches = ['হিমু', 'হুমায়ূন আহমে
 export default function Navigation({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate()
   const { cartItems, wishItems, removeFromCart, totalCartPrice,
-          cartOpen, setCartOpen, wishOpen, setWishOpen } = useApp()
+          cartOpen, setCartOpen, wishOpen, setWishOpen, authUser, signOut } = useApp()
 
   const [scrolled, setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -53,6 +53,7 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
     if (searchOpen && searchRef.current) searchRef.current.focus()
   }, [searchOpen])
 
+  
   // Close drawers on route change
   useEffect(() => {
     setMobileOpen(false)
@@ -61,6 +62,15 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
     setUserOpen(false)
   }, [navigate])
 
+  // Open user drawer when authUser becomes available (e.g., after login)
+  useEffect(() => {
+    if (authUser) {
+      setUserOpen(true)
+      // make sure other drawers are closed
+      setCartOpen(false)
+      setWishOpen(false)
+    }
+  }, [authUser])
   const handleSearch = (e) => {
     e.preventDefault()
     if (query.trim()) {
@@ -321,25 +331,58 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
         side="right"
       >
         <div className="user-drawer">
-          <div className="user-drawer__avatar">পা</div>
-          <p className="user-drawer__name">অতিথি পাঠক</p>
-          <div className="user-drawer__links">
-            {[
-              { label: 'লগইন করুন',      to: '/login' },
-              { label: 'নিবন্ধন করুন',   to: '/register' },
-              { label: 'আমার অর্ডার',    to: '/orders' },
-              { label: 'সেটিংস',         to: '/settings' },
-            ].map((l) => (
-              <Link
-                key={l.label}
-                to={l.to}
-                className="user-drawer__link"
-                onClick={() => setUserOpen(false)}
-              >
-                {l.label} <ArrowRight size={14} />
-              </Link>
-            ))}
-          </div>
+          {authUser ? (
+            <>
+              <div className="user-drawer__avatar">{(authUser.name || authUser.email || 'U').slice(0,1)}</div>
+              <p className="user-drawer__name">{authUser.name || authUser.email}</p>
+              <div className="user-drawer__links">
+                {[
+                  { label: 'Account Info', to: '/account' },
+                  { label: 'Orders & Tracking', to: '/orders' },
+                  { label: 'Rating & Reviews', to: '/reviews' },
+                  { label: 'Wishlist', to: '/wishlist' },
+                ].map((l) => (
+                  <Link
+                    key={l.label}
+                    to={l.to}
+                    className="user-drawer__link"
+                    onClick={() => setUserOpen(false)}
+                  >
+                    {l.label} <ArrowRight size={14} />
+                  </Link>
+                ))}
+
+                <button
+                  className="user-drawer__link user-drawer__link--signout"
+                  onClick={() => { signOut(); setUserOpen(false); navigate('/') }}
+                >
+                  Sign out <ArrowRight size={14} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="user-drawer__avatar">পা</div>
+              <p className="user-drawer__name">অতিথি পাঠক</p>
+              <div className="user-drawer__links">
+                {[
+                  { label: 'লগইন করুন',      to: '/login' },
+                  { label: 'নিবন্ধন করুন',   to: '/register' },
+                  { label: 'আমার অর্ডার',    to: '/orders' },
+                  { label: 'সেটিংস',         to: '/settings' },
+                ].map((l) => (
+                  <Link
+                    key={l.label}
+                    to={l.to}
+                    className="user-drawer__link"
+                    onClick={() => setUserOpen(false)}
+                  >
+                    {l.label} <ArrowRight size={14} />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </Drawer>
 
