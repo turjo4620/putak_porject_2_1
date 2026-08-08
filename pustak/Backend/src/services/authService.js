@@ -9,14 +9,15 @@ const createAuthError = (message, code, status) => {
 };
 
 const ensureUsersTable = async () => {
-    // Create the users table on first use so the auth flow works even in a fresh database.
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
+            user_id INT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
+            phone_number VARCHAR(20),
             password_hash VARCHAR(255) NOT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW()
+            status VARCHAR(20) DEFAULT 'Active',
+            last_login TIMESTAMP
         );
     `);
 };
@@ -47,27 +48,25 @@ const normalizeSignupInput = (name, email, password) => {
 };
 
 const signupUser = async (name, email, password) => {
+    const normalizedInput = normalizeSignupInput(name, email, password);
     await ensureUsersTable();
 
-    const normalizedInput = normalizeSignupInput(name, email, password);
-    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedInput.email]);
-
+    const existingUser = await pool.query('SELECT user_id FROM users WHERE email = $1', [normalizedInput.email]);
     if (existingUser.rowCount > 0) {
         throw createAuthError('An account with this email already exists.', 'DUPLICATE_EMAIL', 409);
     }
 
     const passwordHash = await bcrypt.hash(normalizedInput.password, 12);
+    const userId = Math.floor(Date.now() / 1000);
     const result = await pool.query(
-        'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
-        [normalizedInput.name, normalizedInput.email, passwordHash]
+        'INSERT INTO users (user_id, name, email, password_hash, status) VALUES ($1, $2, $3, $4, $5) RETURNING user_id AS id, name, email',
+        [userId, normalizedInput.name, normalizedInput.email, passwordHash, 'Active']
     );
 
     return result.rows[0];
 };
 
 const loginUser = async (email, password) => {
-    await ensureUsersTable();
-
     const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const cleanPassword = typeof password === 'string' ? password : '';
 
@@ -75,8 +74,10 @@ const loginUser = async (email, password) => {
         throw createAuthError('Please fill in every field.', 'EMPTY_FIELDS', 400);
     }
 
+    await ensureUsersTable();
+
     const result = await pool.query(
-        'SELECT id, name, email, password_hash FROM users WHERE email = $1',
+        'SELECT user_id AS id, name, email, password_hash FROM users WHERE email = $1',
         [cleanEmail]
     );
 
@@ -89,6 +90,8 @@ const loginUser = async (email, password) => {
     if (!isValidPassword) {
         throw createAuthError('The password you entered is incorrect.', 'INVALID_CREDENTIALS', 401);
     }
+
+    await pool.query('UPDATE users SET last_login = NOW() WHERE user_id = $1', [user.id]);
 
     return { id: user.id, name: user.name, email: user.email };
 };
