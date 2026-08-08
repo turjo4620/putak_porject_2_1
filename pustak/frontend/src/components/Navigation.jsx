@@ -1,31 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, NavLink } from 'react-router-dom'
-import { Search, Heart, ShoppingBag, User, Menu, X, Sun, Moon, ChevronDown, Trash2, ArrowRight } from 'lucide-react'
+import { Search, Heart, ShoppingBag, User, Menu, X, Sun, Moon, Trash2, ArrowRight } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Navigation.css'
 
 const navLinks = [
-  { label: 'বিভাগ', hasDropdown: true },
+  { label: 'বিভাগ', to: '/categories' },
   { label: 'আজকের অফার', to: '/offers' },
   { label: 'নতুন বই',    to: '/new-arrivals' },
   { label: 'বেস্টসেলার', to: '/bestsellers' },
   { label: 'লেখক',       to: '/authors' },
   { label: 'প্রকাশক',    to: '/publishers' },
-]
-
-const categories = [
-  { name: 'উপন্যাস',     id: 'novel' },
-  { name: 'কবিতা',       id: 'poetry' },
-  { name: 'বিজ্ঞান',     id: 'science' },
-  { name: 'ইতিহাস',      id: 'history' },
-  { name: 'শিশুদের বই',  id: 'children' },
-  { name: 'আত্মউন্নয়ন',  id: 'self-help' },
-  { name: 'ইসলামিক',     id: 'islamic' },
-  { name: 'একাডেমিক',    id: 'academic' },
-  { name: 'ব্যবসা',      id: 'business' },
-  { name: 'বিদেশী বই',   id: 'foreign' },
-  { name: 'মুক্তিযুদ্ধ', id: 'freedom' },
-  { name: 'আত্মজীবনী',   id: 'biography' },
 ]
 
 const trendingSearches = ['হিমু', 'হুমায়ূন আহমেদ', 'রবীন্দ্রনাথ', 'মুক্তিযুদ্ধ', 'বিজ্ঞান']
@@ -38,7 +23,6 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
   const [scrolled, setScrolled]   = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [catOpen, setCatOpen]     = useState(false)
   const [userOpen, setUserOpen]   = useState(false)
   const [query, setQuery]         = useState('')
   const searchRef = useRef(null)
@@ -101,27 +85,14 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           <ul className="nav__links" role="list">
             {navLinks.map((link) => (
               <li key={link.label} className="nav__item">
-                {link.hasDropdown ? (
-                  <button
-                    className="nav__link nav__link--btn"
-                    aria-expanded={catOpen}
-                    aria-haspopup="true"
-                    onMouseEnter={() => setCatOpen(true)}
-                    onMouseLeave={() => setCatOpen(false)}
-                  >
-                    {link.label}
-                    <ChevronDown size={14} className={`nav__chevron ${catOpen ? 'nav__chevron--open' : ''}`} />
-                  </button>
-                ) : (
                   <NavLink
-                    to={link.to}
-                    className={({ isActive }) =>
-                      `nav__link${isActive ? ' nav__link--active' : ''}`
-                    }
-                  >
-                    {link.label}
-                  </NavLink>
-                )}
+                        to={link.to}
+                        className={({ isActive }) =>
+                          `nav__link${isActive ? ' nav__link--active' : ''}`
+                        }
+                      >
+                        {link.label}
+                      </NavLink>
               </li>
             ))}
           </ul>
@@ -184,34 +155,6 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           </div>
         </div>
 
-        {/* Category Mega Dropdown */}
-        {catOpen && (
-          <div
-            className="nav__dropdown"
-            onMouseEnter={() => setCatOpen(true)}
-            onMouseLeave={() => setCatOpen(false)}
-          >
-            <div className="container">
-              <div className="nav__dropdown-grid">
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={`/category/${cat.id}`}
-                    className="nav__dropdown-item"
-                    onClick={() => setCatOpen(false)}
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
-              </div>
-              <Link to="/offers" className="nav__dropdown-promo" onClick={() => setCatOpen(false)}>
-                <span className="nav__dropdown-promo-label">বিশেষ অফার</span>
-                <strong>আজ সকল বইয়ে ২০% ছাড়</strong>
-                <ArrowRight size={16} className="nav__dropdown-promo-arrow" />
-              </Link>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* ── Cart Drawer ── */}
@@ -397,27 +340,14 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           </div>
           <nav className="nav__drawer-links">
             {navLinks.map((link) => (
-              link.hasDropdown
-                ? categories.slice(0, 6).map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/category/${cat.id}`}
-                      className="nav__drawer-link"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {cat.name}
-                    </Link>
-                  ))
-                : (
-                    <Link
-                      key={link.label}
-                      to={link.to}
-                      className="nav__drawer-link"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  )
+              <Link
+                key={link.label}
+                to={link.to}
+                className="nav__drawer-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </Link>
             ))}
           </nav>
           <div className="nav__drawer-footer">

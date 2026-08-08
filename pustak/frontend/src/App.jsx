@@ -10,6 +10,7 @@ import HomePage        from './pages/HomePage'
 import BookDetailPage  from './pages/BookDetailPage'
 import SearchPage      from './pages/SearchPage'
 import CategoryPage    from './pages/CategoryPage'
+import CategoriesPage  from './pages/CategoriesPage'
 import BestSellersPage from './pages/BestSellersPage'
 import NewArrivalsPage from './pages/NewArrivalsPage'
 import OffersPage      from './pages/OffersPage'
@@ -22,7 +23,7 @@ import RegisterPage    from './pages/RegisterPage'
 import NotFoundPage    from './pages/NotFoundPage'
 
 // Import the Account Dashboard components
-import AccountDashboardLayout from './pages/AccountDashboardLayout'
+import AccountDashboardLayout from './pages/AccountDashboardLayout.jsx'
 import AccountProfileCard     from './pages/AccountProfileCard'
 import AccountOrders          from './pages/AccountOrders'
 import AccountWishlist        from './pages/AccountWishlist'
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/"                  element={<HomePage />} />
             <Route path="/book/:id"          element={<BookDetailPage />} />
             <Route path="/search"            element={<SearchPage />} />
+            <Route path="/categories"        element={<CategoriesPage />} />
             <Route path="/category/:id"      element={<CategoryPage />} />
             <Route path="/bestsellers"       element={<BestSellersPage />} />
             <Route path="/new-arrivals"      element={<NewArrivalsPage />} />

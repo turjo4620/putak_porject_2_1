@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import AccountDashboardLayout from './AccountDashboardLayout'
+import AccountDashboardLayout from './AccountDashboardLayout.jsx'
 import AccountProfileCard from './AccountProfileCard'
 import AccountOrders from './AccountOrders'
 import AccountWishlist from './AccountWishlist'
