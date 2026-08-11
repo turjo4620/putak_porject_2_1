@@ -12,10 +12,10 @@ export default function PublishersPage() {
         <div className="list-page__header">
           <p className="list-page__breadcrumb"><Link to="/">হোম</Link> › প্রকাশক</p>
           <h1 className="list-page__title">সকল প্রকাশনী</h1>
-          <p className="list-page__count">{publishers.length} টি প্রকাশনী</p>
+          <p className="list-page__count">{publishers.slice(0,20).length} টি প্রকাশনী</p>
         </div>
         <div className="publishers-page-grid">
-          {publishers.map((p) => (
+          {publishers.slice(0,20).map((p) => (
             <div
               key={p.id}
               className="pub-page-card"
@@ -26,7 +26,6 @@ export default function PublishersPage() {
             >
               <div className="pub-page-card__logo">{p.logo}</div>
               <strong>{p.name}</strong>
-              <span>{p.books} টি বই</span>
             </div>
           ))}
         </div>
