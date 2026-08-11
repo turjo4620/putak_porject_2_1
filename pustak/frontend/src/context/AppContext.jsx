@@ -74,9 +74,16 @@ export function AppProvider({ children }) {
 
   // Cart
   const addToCart = (book) => {
+    // normalize
+    const item = {
+      ...book,
+      title: book.title || book.book_name,
+      cover: book.cover || book.cover_image_url,
+      price: book.price || book.discount_price,
+    }
     setCartItems((prev) => {
-      if (prev.find((b) => b.id === book.id)) return prev
-      return [...prev, { ...book, qty: 1 }]
+      if (prev.find((b) => b.id === item.id)) return prev
+      return [...prev, { ...item, qty: 1 }]
     })
     setCartOpen(true)
   }
@@ -86,10 +93,17 @@ export function AppProvider({ children }) {
 
   // Wishlist
   const toggleWish = (book) => {
+    // normalize
+    const item = {
+      ...book,
+      title: book.title || book.book_name,
+      cover: book.cover || book.cover_image_url,
+      price: book.price || book.discount_price,
+    }
     setWishItems((prev) =>
-      prev.find((b) => b.id === book.id)
-        ? prev.filter((b) => b.id !== book.id)
-        : [...prev, book]
+      prev.find((b) => b.id === item.id)
+        ? prev.filter((b) => b.id !== item.id)
+        : [...prev, item]
     )
   }
 
