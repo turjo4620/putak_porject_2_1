@@ -287,12 +287,26 @@ export const reviews = [
 ]
 
 export const publishers = [
-  { id: 1, name: 'অন্যপ্রকাশ',        books: 320, logo: 'অ' },
-  { id: 2, name: 'প্রথমা',             books: 285, logo: 'প্র' },
-  { id: 3, name: 'বাংলা একাডেমি',      books: 460, logo: 'বা' },
-  { id: 4, name: 'আগামী প্রকাশনী',     books: 198, logo: 'আ' },
-  { id: 5, name: 'কাকলী প্রকাশনী',    books: 245, logo: 'কা' },
-  { id: 6, name: 'সময় প্রকাশন',        books: 167, logo: 'স' },
+  { id: 1, name: 'প্রতীক প্রকাশনা সংস্থা',      books: 320, logo: 'প্রতীক' },
+  { id: 2, name: 'অন্যপ্রকাশ',                  books: 285, logo: 'অ' },
+  { id: 3, name: 'কাকলী প্রকাশনী',             books: 460, logo: 'কা' },
+  { id: 4, name: 'বিশ্বভারতী গ্রন্থনবিভাগ',    books: 198, logo: 'বিশ্ব' },
+  { id: 5, name: 'ঐতিহ্য',                     books: 245, logo: 'ঐ' },
+  { id: 6, name: 'অবসর',                       books: 167, logo: 'অব' },
+  { id: 7, name: 'নজরুল ইনস্টিটিউট',         books: 210, logo: 'নজ' },
+  { id: 8, name: 'আনন্দ পাবলিশার্স',           books: 150, logo: 'আন' },
+  { id: 9, name: 'সময় প্রকাশন',                books: 190, logo: 'সম' },
+  { id: 10, name: 'রিয়া প্রকাশনী',             books: 135, logo: 'রি' },
+  { id: 11, name: 'অনুভূতি প্রকাশনী',          books: 120, logo: 'অনু' },
+  { id: 12, name: 'সূর্যোদয় প্রকাশন',          books: 98, logo: 'সূ' },
+  { id: 13, name: 'দূরবীণ',                    books: 142, logo: 'দূ' },
+  { id: 14, name: 'অনন্যা',                     books: 76, logo: 'অনে' },
+  { id: 15, name: 'আফসার ব্রাদার্স',           books: 88, logo: 'আফ' },
+  { id: 16, name: 'পত্রভারতী',                 books: 64, logo: 'পত' },
+  { id: 17, name: 'অন্যধারা',                  books: 54, logo: 'অধ' },
+  { id: 18, name: 'অনুপম প্রকাশনী',            books: 43, logo: 'অনু প' },
+  { id: 19, name: 'পেন্সিল পাবলিকেশনস',       books: 37, logo: 'পেন' },
+  { id: 20, name: 'জ্ঞানকোষ প্রকাশনী',         books: 29, logo: 'জ্ ক' },
 ]
 
 export const authors = [
