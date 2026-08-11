@@ -172,56 +172,62 @@ const getBooksByAuthor = async (req, res) => {
   }
 };
 
-const getBooksByCategory = async (req, res) => {
+const getBooksByPublication = async (req, res) => {
   try {
-    const categoryId = parseInt(req.params.id);
+    const publicationId = parseInt(req.params.id);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    // name
-    const categoryQuery = `SELECT category_name FROM categories WHERE category_id = $1`;
-    const categoryResult = await pool.query(categoryQuery, [categoryId]);
+    const publicationQuery = `SELECT title FROM publications WHERE publication_id = $1`;
+    const publicationResult = await pool.query(publicationQuery, [publicationId]);
 
-    if (categoryResult.rows.length === 0) {
-      return res.status(404).json({ error: "Category not found" });
+    if (publicationResult.rows.length === 0) {
+      return res.status(404).json({ error: "Publication not found" });
     }
-    const categoryName = categoryResult.rows[0].category_name;
+    const publicationName = publicationResult.rows[0].title;
 
-    // books
     const bookQuery = `
-      SELECT 
-        books.id, 
-        books.book_name, 
-        books.cover_image_url, 
-        books.price, 
+      SELECT
+        books.id,
+        books.book_name,
+        books.cover_image_url,
+        books.price,
         books.discount_price,
         books.discount_percentage,
-        authors.name AS author
+        MIN(authors.name) AS author
       FROM books
-      JOIN book_category ON books.id = book_category.book_id
+      JOIN book_publication_create ON books.id = book_publication_create.book_id
       LEFT JOIN book_author ON books.id = book_author.book_id
       LEFT JOIN authors ON book_author.author_id = authors.author_id
-      WHERE book_category.category_id = $1
-      ORDER BY books.id ASC
+      WHERE book_publication_create.publication_id = $1
+      GROUP BY books.id
+      ORDER BY 
+        CASE 
+          WHEN books.book_name LIKE '%কালেকশন%' THEN 1
+          WHEN books.book_name LIKE '%বক্সসেট%' THEN 1
+          WHEN books.book_name LIKE '%প্যাকেজ%' THEN 1
+          WHEN books.book_name LIKE '%সমগ্র%' THEN 1
+          WHEN books.book_name LIKE '%রচনাবলি%' THEN 1
+          WHEN books.book_name LIKE '%টি বই%' THEN 1
+          ELSE 0 
+        END ASC,
+        books.id ASC
       LIMIT $2 OFFSET $3
     `;
-    const { rows } = await pool.query(bookQuery, [categoryId, limit, offset]);
 
-    // count
-    const countQuery = `SELECT COUNT(*) FROM book_category WHERE category_id = $1`;
-    const countResult = await pool.query(countQuery, [categoryId]);
+    const { rows } = await pool.query(bookQuery, [publicationId, limit, offset]);
+    const countQuery = `SELECT COUNT(*) FROM book_publication_create WHERE publication_id = $1`;
+    const countResult = await pool.query(countQuery, [publicationId]);
     const totalBooks = parseInt(countResult.rows[0].count);
 
-    // response
     res.status(200).json({
-      categoryName: categoryName,
+      publicationName,
       data: rows,
       total: totalBooks,
       currentPage: page,
-      totalPages: Math.ceil(totalBooks / limit)
+      totalPages: Math.ceil(totalBooks / limit),
     });
-
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Error" });
@@ -242,7 +248,7 @@ const getBookById = async (req, res) => {
         books.discount_price,
         books.discount_percentage,
         books.publisher,
-        books.category AS raw_category,
+        books.category,
         books.isbn,
         books.language,
         books.num_pages,
@@ -251,15 +257,10 @@ const getBookById = async (req, res) => {
         books.num_reviews,
         books.availability,
         books.description,
-        authors.author_id,
-        authors.name AS author,
-        categories.category_id,
-        categories.category_name
+        authors.name AS author
       FROM books
       LEFT JOIN book_author ON books.id = book_author.book_id
       LEFT JOIN authors ON book_author.author_id = authors.author_id
-      LEFT JOIN book_category ON books.id = book_category.book_id
-      LEFT JOIN categories ON book_category.category_id = categories.category_id
       WHERE books.id = $1
     `;
     
@@ -281,6 +282,6 @@ module.exports = {
     getBooks,
     searchBooks,
     getBooksByAuthor,
-    getBooksByCategory,
+    getBooksByPublication,
     getBookById
 }

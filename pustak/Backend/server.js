@@ -33,7 +33,7 @@ app.get('/api/test-db', async (req, res) => {
 const authorRoutes = require('./src/routes/authorRoutes');
 const bookRoutes = require('./src/routes/bookRoutes');
 const authRoutes = require('./src/routes/authRoutes');
-const categoryRoutes = require('./src/routes/categoryRoutes');
+const publicationRoutes = require('./src/routes/publicationRoutes');
 
 const cartRoutes = require("./src/routes/cartRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
@@ -46,7 +46,7 @@ app.use("/api/payments", paymentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/books', bookRoutes);
-app.use('/api/categories', categoryRoutes);
+app.use('/api/publications', publicationRoutes);
 
 // Start the server
 app.listen(PORT, () => {

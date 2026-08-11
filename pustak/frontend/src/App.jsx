@@ -16,6 +16,7 @@ import NewArrivalsPage from './pages/NewArrivalsPage'
 import OffersPage      from './pages/OffersPage'
 import AuthorsPage     from './pages/AuthorsPage'
 import AuthorPage      from './pages/AuthorPage'
+import PublicationPage from './pages/PublicationPage'
 import PublishersPage  from './pages/PublishersPage'
 import CheckoutPage    from './pages/CheckoutPage'
 import LoginPage       from './pages/LoginPage'
@@ -73,7 +74,7 @@ export default function App() {
             */}
             <Route path="/author/:id"        element={<AuthorPage />} />
             <Route path="/publishers"        element={<PublishersPage />} />
-            <Route path="/publisher/:name"   element={<PublishersPage />} />
+            <Route path="/publisher/:id"    element={<PublicationPage />} />
             <Route path="/checkout"          element={<CheckoutPage />} />
             <Route path="/login"             element={<LoginPage />} />
             <Route path="/register"          element={<RegisterPage />} />
