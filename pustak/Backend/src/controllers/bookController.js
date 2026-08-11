@@ -172,6 +172,62 @@ const getBooksByAuthor = async (req, res) => {
   }
 };
 
+const getBooksByCategory = async (req, res) => {
+  try {
+    const categoryId = parseInt(req.params.id);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    // name
+    const categoryQuery = `SELECT category_name FROM categories WHERE category_id = $1`;
+    const categoryResult = await pool.query(categoryQuery, [categoryId]);
+
+    if (categoryResult.rows.length === 0) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    const categoryName = categoryResult.rows[0].category_name;
+
+    // books
+    const bookQuery = `
+      SELECT 
+        books.id, 
+        books.book_name, 
+        books.cover_image_url, 
+        books.price, 
+        books.discount_price,
+        books.discount_percentage,
+        authors.name AS author
+      FROM books
+      JOIN book_category ON books.id = book_category.book_id
+      LEFT JOIN book_author ON books.id = book_author.book_id
+      LEFT JOIN authors ON book_author.author_id = authors.author_id
+      WHERE book_category.category_id = $1
+      ORDER BY books.id ASC
+      LIMIT $2 OFFSET $3
+    `;
+    const { rows } = await pool.query(bookQuery, [categoryId, limit, offset]);
+
+    // count
+    const countQuery = `SELECT COUNT(*) FROM book_category WHERE category_id = $1`;
+    const countResult = await pool.query(countQuery, [categoryId]);
+    const totalBooks = parseInt(countResult.rows[0].count);
+
+    // response
+    res.status(200).json({
+      categoryName: categoryName,
+      data: rows,
+      total: totalBooks,
+      currentPage: page,
+      totalPages: Math.ceil(totalBooks / limit)
+    });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error" });
+  }
+};
+
 const getBookById = async (req, res) => {
   try {
     const bookId = parseInt(req.params.id);
@@ -186,7 +242,7 @@ const getBookById = async (req, res) => {
         books.discount_price,
         books.discount_percentage,
         books.publisher,
-        books.category,
+        books.category AS raw_category,
         books.isbn,
         books.language,
         books.num_pages,
@@ -195,10 +251,15 @@ const getBookById = async (req, res) => {
         books.num_reviews,
         books.availability,
         books.description,
-        authors.name AS author
+        authors.author_id,
+        authors.name AS author,
+        categories.category_id,
+        categories.category_name
       FROM books
       LEFT JOIN book_author ON books.id = book_author.book_id
       LEFT JOIN authors ON book_author.author_id = authors.author_id
+      LEFT JOIN book_category ON books.id = book_category.book_id
+      LEFT JOIN categories ON book_category.category_id = categories.category_id
       WHERE books.id = $1
     `;
     
@@ -220,5 +281,6 @@ module.exports = {
     getBooks,
     searchBooks,
     getBooksByAuthor,
+    getBooksByCategory,
     getBookById
 }
