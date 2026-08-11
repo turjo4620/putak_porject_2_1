@@ -58,7 +58,7 @@ export default function BookDetailPage() {
   }
 
   // Real Database Column Mappings
-  const category = book.category || 'সাধারণ'
+  const category = book.category_name || book.raw_category || 'সাধারণ'
   const publisher = book.publisher || 'অজ্ঞাত প্রকাশক'
   const rating = book.rating ? Number(book.rating) : 0
   const reviews = book.num_reviews || 0
@@ -107,7 +107,11 @@ export default function BookDetailPage() {
           </button>
           <Link to="/">হোম</Link>
           <span aria-hidden="true">›</span>
-          <Link to={`/category/${category}`}>{category}</Link>
+          {book.category_id ? (
+            <Link to={`/category/${book.category_id}`}>{category}</Link>
+          ) : (
+            <span>{category}</span>
+          )}
           <span aria-hidden="true">›</span>
           <span aria-current="page">{book.book_name}</span>
         </nav>
@@ -147,7 +151,11 @@ export default function BookDetailPage() {
             <span className="book-detail__category">{category}</span>
             <h1 className="book-detail__title">{book.book_name}</h1>
             <p className="book-detail__author">
-              লেখক: <Link to={`/author/${encodeURIComponent(book.author)}`} className="book-detail__author-link">{book.author}</Link>
+              লেখক: {book.author_id ? (
+                <Link to={`/author/${book.author_id}`} className="book-detail__author-link">{book.author}</Link>
+              ) : (
+                <span className="book-detail__author-link">{book.author || 'অজ্ঞাত লেখক'}</span>
+              )}
             </p>
             <p className="book-detail__publisher">প্রকাশক: <strong>{publisher}</strong></p>
 
