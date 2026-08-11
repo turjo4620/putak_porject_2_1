@@ -35,6 +35,14 @@ const bookRoutes = require('./src/routes/bookRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 
+const cartRoutes = require("./src/routes/cartRoutes");
+const orderRoutes = require("./src/routes/orderRoutes");
+const paymentRoutes = require("./src/routes/paymentRoutes");
+
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/books', bookRoutes);

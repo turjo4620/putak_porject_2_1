@@ -1,0 +1,116 @@
+.payment-page {
+  padding: var(--space-8) 0 var(--space-16);
+}
+
+.payment-page__title {
+  margin-bottom: var(--space-6);
+}
+
+.payment-page__error {
+  color: #c0392b;
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  margin-bottom: var(--space-4);
+}
+
+.payment-page__layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .payment-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.payment-page__form {
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 10px;
+  padding: var(--space-6);
+}
+
+.payment-page__methods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.payment-method--active {
+  border-color: var(--color-primary, #111);
+  background: #fafafa;
+}
+
+.payment-page__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.payment-page__fields input {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.payment-page__note {
+  color: var(--color-muted, #666);
+  margin-bottom: var(--space-4);
+}
+
+.payment-page__pay-btn {
+  width: 100%;
+  padding: var(--space-4);
+  background: var(--color-primary, #111);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payment-page__pay-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-page__summary {
+  border: 1px solid var(--color-border, #e5e5e5);
+  border-radius: 10px;
+  padding: var(--space-6);
+  position: sticky;
+  top: var(--space-6);
+}
+
+.payment-page__summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  color: var(--color-muted, #555);
+}
+
+.payment-page__summary-total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border, #e5e5e5);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: 1.1rem;
+}

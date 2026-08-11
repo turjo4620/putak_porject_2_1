@@ -6,25 +6,23 @@ import './BookCard.css'
 
 export default function BookCard({ book, size = 'default' }) {
   const navigate = useNavigate()
-  const { addToCart, toggleWish, isWished } = useApp()
+  const { addToCart, toggleWish, isWished, authUser } = useApp()
   const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
 
   // ---------------------------------------------------------
   // DATABASE DATA MAPPING & FALLBACKS
-  // This maps your PostgreSQL column names to the UI, 
-  // and provides safe defaults for missing data (like reviews)
   // ---------------------------------------------------------
   const bookId = book.id;
   const title = book.book_name || book.title || 'শিরোনাম নেই';
   const cover = book.cover_image_url || book.cover;
   const author = book.author || 'অজ্ঞাত';
   const price = book.price || 0;
-  
-  // Safe defaults for UI features not in the DB yet
+
   const category = book.category || null;
   const rating = book.rating || 0;
   const reviews = book.reviews || 0;
-  const inStock = book.inStock !== false; // defaults to true
+  const inStock = book.inStock !== false;
   const originalPrice = book.originalPrice || null;
   const discount = book.discount || 0;
   const badge = book.badge || null;
@@ -33,11 +31,24 @@ export default function BookCard({ book, size = 'default' }) {
 
   const wished = isWished(bookId)
 
-  const handleCart = (e) => {
+  const handleCart = async (e) => {
     e.stopPropagation()
-    addToCart(book)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1500)
+
+    if (!authUser) {
+      navigate('/login')
+      return
+    }
+
+    try {
+      setAdding(true)
+      await addToCart(book)
+      setAdded(true)
+      setTimeout(() => setAdded(false), 1500)
+    } catch (err) {
+      alert(err.message || 'কার্টে যোগ করা যায়নি')
+    } finally {
+      setAdding(false)
+    }
   }
 
   const handlePreview = (e) => {
@@ -82,9 +93,10 @@ export default function BookCard({ book, size = 'default' }) {
             className={`book-card__action book-card__action--cart ${added ? 'book-card__action--added' : ''}`}
             aria-label="কার্টে যোগ করুন"
             onClick={handleCart}
+            disabled={adding}
           >
             <ShoppingBag size={16} />
-            {added ? 'যোগ হয়েছে' : 'কার্টে যোগ'}
+            {added ? 'যোগ হয়েছে' : adding ? 'যোগ হচ্ছে...' : 'কার্টে যোগ'}
           </button>
         </div>
 
