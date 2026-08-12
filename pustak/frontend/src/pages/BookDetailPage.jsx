@@ -8,12 +8,14 @@ import './BookDetailPage.css'
 export default function BookDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addToCart, toggleWish, isWished, isInCart } = useApp()
+  const { addToCart, toggleWish, isWished, isInCart, authUser } = useApp()
 
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [cartError, setCartError] = useState('')
   const [copied, setCopied] = useState(false)
   const [related, setRelated] = useState([])
   const [moreByAuthor, setMoreByAuthor] = useState([])
@@ -84,10 +86,22 @@ export default function BookDetailPage() {
   const wished = isWished(book.id)
   const inCart = isInCart(book.id)
 
-  const handleCart = () => {
-    addToCart({ ...book, qty, title: book.book_name, cover: book.cover_image_url, price: currentPrice })
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+  const handleCart = async () => {
+    if (!authUser) {
+      navigate('/login')
+      return
+    }
+    setCartError('')
+    try {
+      setAdding(true)
+      await addToCart({ ...book, qty, title: book.book_name, cover: book.cover_image_url, price: currentPrice })
+      setAdded(true)
+      setTimeout(() => setAdded(false), 2000)
+    } catch (err) {
+      setCartError(err.message || 'কার্টে যোগ করা যায়নি')
+    } finally {
+      setAdding(false)
+    }
   }
 
   const handleShare = () => {
@@ -199,13 +213,19 @@ export default function BookDetailPage() {
               <button
                 className={`book-detail__cart-btn ${inCart ? 'book-detail__cart-btn--in' : ''} ${added ? 'book-detail__cart-btn--added' : ''}`}
                 onClick={handleCart}
-                disabled={!inStock}
+                disabled={!inStock || adding}
                 aria-label="কার্টে যোগ করুন"
               >
                 <ShoppingBag size={18} />
-                {added ? 'কার্টে যোগ হয়েছে' : inCart ? 'কার্টে আছে' : 'কার্টে যোগ করুন'}
+                {added ? 'কার্টে যোগ হয়েছে' : adding ? 'যোগ হচ্ছে...' : inCart ? 'কার্টে আছে' : 'কার্টে যোগ করুন'}
               </button>
             </div>
+
+            {cartError && (
+              <p style={{ color: 'var(--color-error, #c0392b)', marginTop: 'var(--space-2)', fontSize: '0.9rem' }}>
+                {cartError}
+              </p>
+            )}
 
             <button className="book-detail__buy-now-btn" disabled={!inStock}>
               এখনই কিনুন

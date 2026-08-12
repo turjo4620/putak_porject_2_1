@@ -29,4 +29,13 @@ async function getOrders(req, res, next) {
   }
 }
 
-module.exports = { placeOrder, getOrder, getOrders };
+async function getTracking(req, res, next) {
+  try {
+    const data = await orderService.getTrackingInfo(req.userId, req.params.orderId);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { placeOrder, getOrder, getOrders, getTracking };

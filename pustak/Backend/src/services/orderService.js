@@ -130,4 +130,31 @@ async function listOrders(userId) {
   return res.rows;
 }
 
-module.exports = { placeOrderFromCart, getOrderById, listOrders };
+// Returns delivery / tracking info for a single order.
+// If no delivery row exists yet, returns null so the frontend can show a
+// "not dispatched yet" state without crashing.
+async function getTrackingInfo(userId, orderId) {
+  // verify ownership first
+  const orderRes = await pool.query(
+    'SELECT order_id, order_number, status FROM orders WHERE order_id = $1 AND user_id = $2',
+    [orderId, userId]
+  );
+  if (!orderRes.rows.length) {
+    throw { status: 404, message: 'অর্ডার খুঁজে পাওয়া যায়নি' };
+  }
+
+  const deliveryRes = await pool.query(
+    `SELECT delivery_id, tracking_no, courier_name, delivered_via,
+            dispatch_date, est_date, delivered_at, status
+     FROM deliveries
+     WHERE order_id = $1`,
+    [orderId]
+  );
+
+  return {
+    order: orderRes.rows[0],
+    delivery: deliveryRes.rows[0] || null,
+  };
+}
+
+module.exports = { placeOrderFromCart, getOrderById, listOrders, getTrackingInfo };

@@ -50,6 +50,20 @@ app.use('/api/books', bookRoutes);
 app.use('/api/publications', publicationRoutes);
 app.use('/api/categories', categoryRoutes);
 
+// ─── Global error handler ───────────────────────────────────────────────────
+// Services throw plain objects { status, message } for expected errors.
+// This handler converts them into proper HTTP responses so the frontend
+// gets a readable JSON error instead of a raw 500 stack trace.
+app.use((err, req, res, next) => {
+    // Known operational error thrown by a service layer
+    if (err && err.status && err.message) {
+        return res.status(err.status).json({ message: err.message });
+    }
+    // Unexpected / programming error – log it, return generic 500
+    console.error('[Unhandled Error]', err);
+    res.status(500).json({ message: 'সার্ভারে একটি সমস্যা হয়েছে, আবার চেষ্টা করুন' });
+});
+
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

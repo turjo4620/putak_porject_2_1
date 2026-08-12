@@ -98,11 +98,13 @@ export function AppProvider({ children }) {
   }, [fetchCart])
 
   // Add a book to the cart. Returns the created/updated cart_item.
+  // Accepts an optional `qty` property on the book object (from BookDetailPage).
   const addToCart = async (book) => {
     if (!authUser) {
       throw new Error('কার্টে যোগ করতে লগইন করুন')
     }
-    const item = await api.post('/cart/items', { bookId: book.id, quantity: 1 })
+    const quantity = (Number.isInteger(book.qty) && book.qty > 0) ? book.qty : 1
+    const item = await api.post('/cart/items', { bookId: book.id, quantity })
     await fetchCart()
     setCartOpen(true)
     return item

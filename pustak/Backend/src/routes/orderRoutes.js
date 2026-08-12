@@ -12,7 +12,10 @@ router.post('/', orderController.placeOrder);
 // GET  /api/orders            -> list current user's orders
 router.get('/', orderController.getOrders);
 
-// GET  /api/orders/:orderId   -> { order, items } | used by PaymentPage
+// GET  /api/orders/:orderId           -> { order, items } | used by PaymentPage
 router.get('/:orderId', orderController.getOrder);
+
+// GET  /api/orders/:orderId/tracking  -> { order, delivery } | used by AccountOrders
+router.get('/:orderId/tracking', orderController.getTracking);
 
 module.exports = router;

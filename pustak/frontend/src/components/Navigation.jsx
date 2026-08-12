@@ -285,10 +285,10 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               <p className="user-drawer__name">{authUser.name || authUser.email}</p>
               <div className="user-drawer__links">
                 {[
-                  { label: 'Account Info', to: '/account' },
-                  { label: 'Orders & Tracking', to: '/orders' },
-                  { label: 'Rating & Reviews', to: '/reviews' },
-                  { label: 'Wishlist', to: '/wishlist' },
+                  { label: 'Account Info', to: '/account/info' },
+                  { label: 'Orders & Tracking', to: '/account/orders' },
+                  { label: 'Rating & Reviews', to: '/account/reviews' },
+                  { label: 'Wishlist', to: '/account/wishlist' },
                 ].map((l) => (
                   <Link
                     key={l.label}
