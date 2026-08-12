@@ -19,6 +19,7 @@ import AuthorPage      from './pages/AuthorPage'
 import PublicationPage from './pages/PublicationPage'
 import PublishersPage  from './pages/PublishersPage'
 import CheckoutPage    from './pages/CheckoutPage'
+import CartPage        from './pages/CartPage'
 import LoginPage       from './pages/LoginPage'
 import RegisterPage    from './pages/RegisterPage'
 import NotFoundPage    from './pages/NotFoundPage'
@@ -29,6 +30,7 @@ import AccountProfileCard     from './pages/AccountProfileCard'
 import AccountOrders          from './pages/AccountOrders'
 import AccountWishlist        from './pages/AccountWishlist'
 import AccountReviews         from './pages/AccountReviews'
+import PaymentPage            from './pages/PaymentPage'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -75,7 +77,9 @@ export default function App() {
             <Route path="/author/:id"        element={<AuthorPage />} />
             <Route path="/publishers"        element={<PublishersPage />} />
             <Route path="/publisher/:id"    element={<PublicationPage />} />
+            <Route path="/cart"              element={<CartPage />} />
             <Route path="/checkout"          element={<CheckoutPage />} />
+            <Route path="/payment/:orderId"  element={<PaymentPage />} />
             <Route path="/login"             element={<LoginPage />} />
             <Route path="/register"          element={<RegisterPage />} />
             

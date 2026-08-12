@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../api/http';
 import './account-dashboard.css';
 
 const AccountOrders = () => {
@@ -9,17 +10,10 @@ const AccountOrders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch('/api/orders/my-orders');
-        
-        const contentType = response.headers.get("content-type");
-        if (!response.ok || !contentType || !contentType.includes("application/json")) {
-           throw new Error("Unable to load orders. Please ensure the backend server is running.");
-        }
-
-        const data = await response.json();
-        setOrders(data);
+        const data = await api.get('/orders');
+        setOrders(data || []);
       } catch (err) {
-        setError(err.message);
+        setError(err.message || "Unable to load orders. Please ensure the backend server is running.");
       } finally {
         setLoading(false);
       }
@@ -47,12 +41,15 @@ const AccountOrders = () => {
         <div className="card">No orders found.</div>
       ) : (
         orders.map((order) => (
-          <div key={order._id} className="card order-card">
+          <div key={order.order_id} className="card order-card">
              <div className="order-card-header">
-                <span className="order-id">Order #{order._id}</span>
-                <span className="order-status">{order.status || 'Completed'}</span>
+                <span className="order-id">Order #{order.order_number}</span>
+                <span className="order-status">{order.status || 'Pending'}</span>
              </div>
-             {/* Map through order items here */}
+             <div className="order-card-body">
+                <p><strong>Order Date:</strong> {new Date(order.order_date).toLocaleDateString('bn-BD')}</p>
+                <p><strong>Total Amount:</strong> ৳{Number(order.total_amount).toFixed(2)}</p>
+             </div>
           </div>
         ))
       )}

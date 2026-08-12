@@ -1,9 +1,30 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './CheckoutPage.css'
 
 export default function CheckoutPage() {
-  const { cartItems, totalCartPrice, removeFromCart } = useApp()
+  const navigate = useNavigate()
+  const { cartItems, totalCartPrice, removeFromCart, placeOrder, authUser } = useApp()
+  const [placing, setPlacing] = useState(false)
+  const [error, setError] = useState('')
+
+  const handlePlaceOrder = async () => {
+    if (!authUser) {
+      navigate('/login')
+      return
+    }
+    setError('')
+    try {
+      setPlacing(true)
+      const order = await placeOrder()
+      navigate(`/payment/${order.order_id}`)
+    } catch (err) {
+      setError(err.message || 'অর্ডার দিতে সমস্যা হয়েছে')
+    } finally {
+      setPlacing(false)
+    }
+  }
 
   return (
     <div className="checkout-page">
@@ -12,6 +33,8 @@ export default function CheckoutPage() {
           <Link to="/">হোম</Link> › চেকআউট
         </p>
         <h1 className="checkout-page__title">অর্ডার নিশ্চিত করুন</h1>
+
+        {error && <p className="checkout-page__error">{error}</p>}
 
         {cartItems.length === 0 ? (
           <div className="checkout-page__empty">
@@ -61,8 +84,12 @@ export default function CheckoutPage() {
                 <strong>মোট</strong>
                 <strong>৳{totalCartPrice}</strong>
               </div>
-              <button className="checkout-page__order-btn">
-                অর্ডার দিন
+              <button 
+                className="checkout-page__order-btn"
+                onClick={handlePlaceOrder}
+                disabled={placing}
+              >
+                {placing ? 'অর্ডার দেওয়া হচ্ছে...' : 'অর্ডার দিন'}
               </button>
               <p className="checkout-page__note">
                 বাংলাদেশের যেকোনো ঠিকানায় ৩-৫ কার্যদিবসে ডেলিভারি

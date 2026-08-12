@@ -25,41 +25,46 @@ async function createPayment(userId, orderId, data) {
     throw { status: 400, message: 'অবৈধ পেমেন্ট পদ্ধতি' };
   }
 
-  const status = method === 'cod' ? 'pending' : 'completed';
+  const status = method === 'cod' ? 'Pending' : 'Completed';
 
-  const result = await pool.query(
-    `INSERT INTO payment (
-       order_id, amount, method, payment_status,
-       sender_mobile_no, provider_name,
-       card_last4, card_brand, bank_name,
-       collected_by, collection_date
-     ) VALUES (
-       $1, $2, $3, $4,
-       $5, $6,
-       $7, $8, $9,
-       $10, CASE WHEN $3 = 'cod' THEN CURRENT_TIMESTAMP ELSE NULL END
-     )
+  // Insert into base payments table first
+  const paymentResult = await pool.query(
+    `INSERT INTO payments (order_id, amount, payment_status)
+     VALUES ($1, $2, $3)
      RETURNING *`,
-    [
-      orderId,
-      order.total_amount,
-      method,
-      status,
-      mobileNo || null,
-      providerName || null,
-      cardLast4 || null,
-      cardBrand || null,
-      bankName || null,
-      collectedBy || null,
-    ]
+    [orderId, order.total_amount, status]
   );
 
+  const payment = paymentResult.rows[0];
+
+  // Insert into specific payment type table
+  if (method === 'mfs') {
+    await pool.query(
+      `INSERT INTO mfs_payments (payment_id, sender_mobile_no, provider_name)
+       VALUES ($1, $2, $3)`,
+      [payment.payment_id, mobileNo || null, providerName || null]
+    );
+  } else if (method === 'card') {
+    await pool.query(
+      `INSERT INTO card_payments (payment_id, card_last_4_digits, bank_name, card_brand)
+       VALUES ($1, $2, $3, $4)`,
+      [payment.payment_id, cardLast4 || null, bankName || null, cardBrand || null]
+    );
+  } else if (method === 'cod') {
+    await pool.query(
+      `INSERT INTO cash_on_deliveries (payment_id, collected_by, collection_date)
+       VALUES ($1, $2, NULL)`,
+      [payment.payment_id, collectedBy || null]
+    );
+  }
+
+  // Update order status
   await pool.query(
     `UPDATE orders SET status = $1 WHERE order_id = $2`,
     [method === 'cod' ? 'Confirmed' : 'Paid', orderId]
   );
 
-  return result.rows[0];
+  return payment;
 }
 
 module.exports = { createPayment };
