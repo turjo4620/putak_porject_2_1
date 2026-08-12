@@ -26,6 +26,7 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
   const [userOpen, setUserOpen]   = useState(false)
   const [query, setQuery]         = useState('')
   const searchRef = useRef(null)
+  const prevAuthUserRef = useRef(authUser) // track previous authUser to detect login transition
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60)
@@ -46,11 +47,15 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
     setUserOpen(false)
   }, [navigate])
 
-  // Open user drawer when authUser becomes available (e.g., after login)
+  // Open user drawer only when authUser transitions from null → a value (i.e., just logged in)
+  // This prevents the drawer from auto-opening on page refresh when authUser is restored from localStorage
   useEffect(() => {
-    if (authUser) {
+    const prevAuthUser = prevAuthUserRef.current
+    prevAuthUserRef.current = authUser
+
+    if (!prevAuthUser && authUser) {
+      // User just logged in (was null, now has a value)
       setUserOpen(true)
-      // make sure other drawers are closed
       setCartOpen(false)
       setWishOpen(false)
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './AuthPage.css'
@@ -18,10 +18,17 @@ async function parseApiResponse(response) {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setAuthUser } = useApp()
+  const { setAuthUser, authUser } = useApp()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+
+  // Redirect already-logged-in users away from the login page
+  useEffect(() => {
+    if (authUser) {
+      navigate('/', { replace: true })
+    }
+  }, [authUser, navigate])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
