@@ -137,7 +137,7 @@ export default function PublicationPage() {
 
         <div className="publication-page__books">
           {totalBooks === 0 ? (
-            <p style={{ padding: '2rem 0' }}>এই প্রকাশনীতির কোনো বই পাওয়া যায়নি।</p>
+            <p style={{ padding: '2rem 0' }}>এই প্রকাশনীর কোনো বই পাওয়া যায়নি।</p>
           ) : (
             <>
               <div className={`publication-page__books-grid ${booksLoading ? 'publication-page__books-grid--loading' : ''}`}>

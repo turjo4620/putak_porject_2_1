@@ -179,27 +179,27 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           <>
             <ul className="drawer__list">
               {cartItems.map((b) => (
-                <li key={b.id} className="drawer__item">
+                <li key={b.cart_item_id} className="drawer__item">
                   <img
-                    src={b.cover}
-                    alt={b.title}
+                    src={b.cover_image_url}
+                    alt={b.book_name}
                     className="drawer__item-cover"
-                    onClick={() => { setCartOpen(false); navigate(`/book/${b.id}`) }}
+                    onClick={() => { setCartOpen(false); navigate(`/book/${b.book_id}`) }}
                   />
                   <div className="drawer__item-info">
                     <strong
                       className="drawer__item-title"
-                      onClick={() => { setCartOpen(false); navigate(`/book/${b.id}`) }}
+                      onClick={() => { setCartOpen(false); navigate(`/book/${b.book_id}`) }}
                     >
-                      {b.title}
+                      {b.book_name}
                     </strong>
-                    <span className="drawer__item-author">{b.author}</span>
-                    <span className="drawer__item-price">৳{b.price}</span>
+                    <span className="drawer__item-author">{b.authors}</span>
+                    <span className="drawer__item-price">৳{b.locked_price}</span>
                   </div>
                   <button
                     className="drawer__item-remove"
-                    onClick={() => removeFromCart(b.id)}
-                    aria-label={`${b.title} সরান`}
+                    onClick={() => removeFromCart(b.cart_item_id)}
+                    aria-label={`${b.book_name} সরান`}
                   >
                     <Trash2 size={15} />
                   </button>

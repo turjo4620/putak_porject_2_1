@@ -34,6 +34,7 @@ const authorRoutes = require('./src/routes/authorRoutes');
 const bookRoutes = require('./src/routes/bookRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const publicationRoutes = require('./src/routes/publicationRoutes');
+const categoryRoutes = require('./src/routes/categoryRoutes');
 
 const cartRoutes = require("./src/routes/cartRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/publications', publicationRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Start the server
 app.listen(PORT, () => {

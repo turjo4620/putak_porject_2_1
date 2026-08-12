@@ -24,18 +24,18 @@ export default function CheckoutPage() {
             <div className="checkout-page__items">
               <h2>অর্ডার তালিকা ({cartItems.length})</h2>
               {cartItems.map((b) => (
-                <div key={b.id} className="checkout-item">
-                  <img src={b.cover} alt={b.title} className="checkout-item__cover" />
+                <div key={b.cart_item_id} className="checkout-item">
+                  <img src={b.cover_image_url} alt={b.book_name} className="checkout-item__cover" />
                   <div className="checkout-item__info">
                     <strong>
-                      <Link to={`/book/${b.id}`}>{b.title}</Link>
+                      <Link to={`/book/${b.book_id}`}>{b.book_name}</Link>
                     </strong>
-                    <span>{b.author}</span>
-                    <span className="checkout-item__price">৳{b.price}</span>
+                    <span>{b.authors}</span>
+                    <span className="checkout-item__price">৳{b.locked_price}</span>
                   </div>
                   <button
                     className="checkout-item__remove"
-                    onClick={() => removeFromCart(b.id)}
+                    onClick={() => removeFromCart(b.cart_item_id)}
                     aria-label="সরান"
                   >✕</button>
                 </div>
