@@ -10,7 +10,6 @@ export function AppProvider({ children }) {
   const [cartItems, setCartItems] = useState([])   // rows from cart_item joined with books
   const [cartLoading, setCartLoading] = useState(false)
 
-  const [wishItems, setWishItems]   = useState([])
   const [cartOpen, setCartOpen]     = useState(false)
   const [wishOpen, setWishOpen]     = useState(false)
   const [previewBook, setPreviewBook] = useState(null)
@@ -44,6 +43,7 @@ export function AppProvider({ children }) {
     }
     setAuthUserState(null)
     setCartItems([])
+    setWishItems([])
   }
 
   // Database (books listing)
@@ -144,23 +144,56 @@ export function AppProvider({ children }) {
     return order
   }
 
-  // -------------------- WISHLIST (unchanged, local only) --------------------
+  // -------------------- WISHLIST (DB-backed, mirrors cart) --------------------
 
-  const toggleWish = (book) => {
-    const item = {
-      ...book,
-      title: book.title || book.book_name,
-      cover: book.cover || book.cover_image_url,
-      price: book.price || book.discount_price,
+  const [wishItems, setWishItems]   = useState([])
+  const [wishLoading, setWishLoading] = useState(false)
+
+  const fetchWishlist = useCallback(async () => {
+    if (!authUser) {
+      setWishItems([])
+      return
     }
-    setWishItems((prev) =>
-      prev.find((b) => b.id === item.id)
-        ? prev.filter((b) => b.id !== item.id)
-        : [...prev, item]
-    )
+    try {
+      setWishLoading(true)
+      const data = await api.get('/wishlist')
+      setWishItems(data.items)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setWishLoading(false)
+    }
+  }, [authUser])
+
+  // Load / clear wishlist whenever login state changes
+  useEffect(() => {
+    fetchWishlist()
+  }, [fetchWishlist])
+
+  // Toggle: adds the book if not wishlisted, removes it if already there.
+  // Works for both BookCard heart icon and AccountWishlist trash button.
+  const toggleWish = async (book) => {
+    if (!authUser) return   // silently ignore if not logged in
+    const bookId = book.id || book.book_id
+    try {
+      await api.post('/wishlist/items', { bookId })
+      await fetchWishlist()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const isWished = (id) => wishItems.some((b) => b.id === id)
+  // Direct remove by wishlist_item_id (used in AccountWishlist trash button)
+  const removeFromWishlist = async (wishlistItemId) => {
+    try {
+      await api.del(`/wishlist/items/${wishlistItemId}`)
+      setWishItems((prev) => prev.filter((it) => it.wishlist_item_id !== wishlistItemId))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const isWished = (bookId) => wishItems.some((it) => it.book_id === bookId)
 
   // Render
   return (
@@ -170,7 +203,7 @@ export function AppProvider({ children }) {
       addToCart, incrementItem, decrementItem, removeFromCart, isInCart,
       placeOrder, fetchCart,
       // wishlist
-      wishItems, toggleWish, isWished,
+      wishItems, wishLoading, toggleWish, removeFromWishlist, isWished, fetchWishlist,
       // ui
       cartOpen, setCartOpen,
       wishOpen, setWishOpen,

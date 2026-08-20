@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import './account-dashboard.css';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import { api } from '../api/http'
+import './account-dashboard.css'
 
 const AccountProfileCard = () => {
-  const [profileData, setProfileData] = useState(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate()
+  const { authUser } = useApp()
+
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch('/api/user/profile'); // Replace with your actual endpoint
-        
-        // Fix for the "<!DOCTYPE" error: check content type before parsing
-        const contentType = response.headers.get("content-type");
-        if (!response.ok || !contentType || !contentType.includes("application/json")) {
-            throw new Error("Failed to fetch profile data. Server returned an invalid response.");
-        }
+    if (!authUser) { navigate('/login'); return }
 
-        const data = await response.json();
-        setProfileData(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    api.get('/auth/me')
+      .then(data => setProfile(data))
+      .catch(err => setError(err.message || 'প্রোফাইল লোড করা যায়নি'))
+      .finally(() => setLoading(false))
+  }, [authUser, navigate])
 
-    fetchProfile();
-  }, []);
+  const initials = (profile?.name || authUser?.name || '?')
+    .trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
-  if (loading) return <div className="card">Loading profile...</div>;
+  if (loading) {
+    return (
+      <div className="card account-profile-card">
+        <p style={{ padding: '2rem', color: '#6b7280' }}>প্রোফাইল লোড হচ্ছে...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="card account-profile-card">
-      <div className="card-header">
+
+      <div className="profile-card__header">
         <h2>Profile</h2>
         <button className="btn-text">Edit</button>
       </div>
@@ -41,35 +43,45 @@ const AccountProfileCard = () => {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="profile-grid">
+
+        {/* ── Avatar column ── */}
         <div className="profile-picture-section">
-          <div className="avatar-placeholder">Avatar</div>
+          <div className="profile-avatar-circle">{initials}</div>
           <button className="btn-primary">Change Profile Picture</button>
         </div>
 
+        {/* ── Details column ── */}
         <div className="profile-details-section">
+
           <div className="form-group">
             <label>Name</label>
-            <input type="text" defaultValue={profileData?.name || "Turjo Sarkar Prince"} readOnly />
+            <input type="text" value={profile?.name ?? authUser?.name ?? ''} readOnly />
           </div>
 
           <div className="form-group">
             <label>Date of birth</label>
-            <input type="date" defaultValue={profileData?.dob || ""} readOnly />
+            {/* Not stored in DB yet — kept as editable UI field */}
+            <input type="date" placeholder="mm/dd/yyyy" />
           </div>
 
           <div className="form-group">
             <label>Gender</label>
             <div className="radio-group">
-               <label><input type="radio" name="gender" value="Male" defaultChecked={profileData?.gender === 'Male'} /> Male</label>
-               <label><input type="radio" name="gender" value="Female" defaultChecked={profileData?.gender === 'Female'} /> Female</label>
-               <label><input type="radio" name="gender" value="Other" defaultChecked={profileData?.gender === 'Other'} /> Other</label>
+              <label><input type="radio" name="gender" value="Male"   /> Male</label>
+              <label><input type="radio" name="gender" value="Female" /> Female</label>
+              <label><input type="radio" name="gender" value="Other"  /> Other</label>
             </div>
           </div>
 
           <div className="form-group">
             <label>Mobile</label>
             <div className="input-with-action">
-              <input type="text" defaultValue={profileData?.mobile || ""} readOnly />
+              <input
+                type="text"
+                value={profile?.phone_number ?? ''}
+                placeholder="মোবাইল নম্বর যোগ করুন"
+                readOnly
+              />
               <button className="btn-text">Change Mobile Number</button>
             </div>
           </div>
@@ -77,7 +89,7 @@ const AccountProfileCard = () => {
           <div className="form-group">
             <label>Email</label>
             <div className="input-with-action">
-              <input type="email" defaultValue={profileData?.email || "sarkerturjo2022@gmail.com"} readOnly />
+              <input type="email" value={profile?.email ?? authUser?.email ?? ''} readOnly />
               <button className="btn-text">Change Email</button>
             </div>
           </div>
@@ -86,10 +98,11 @@ const AccountProfileCard = () => {
             <button className="btn-text">Change Password</button>
             <button className="btn-text text-danger">Remove Password</button>
           </div>
+
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AccountProfileCard;
+export default AccountProfileCard

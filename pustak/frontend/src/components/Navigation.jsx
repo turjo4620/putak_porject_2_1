@@ -248,23 +248,32 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
         ) : (
           <ul className="drawer__list">
             {wishItems.map((b) => (
-              <li key={b.id} className="drawer__item">
+              <li key={b.wishlist_item_id} className="drawer__item">
                 <img
-                  src={b.cover}
-                  alt={b.title}
+                  src={b.cover_image_url}
+                  alt={b.book_name}
                   className="drawer__item-cover"
-                  onClick={() => { setWishOpen(false); navigate(`/book/${b.id}`) }}
+                  onClick={() => { setWishOpen(false); navigate(`/book/${b.book_id}`) }}
                 />
                 <div className="drawer__item-info">
                   <strong
                     className="drawer__item-title"
-                    onClick={() => { setWishOpen(false); navigate(`/book/${b.id}`) }}
+                    onClick={() => { setWishOpen(false); navigate(`/book/${b.book_id}`) }}
                   >
-                    {b.title}
+                    {b.book_name}
                   </strong>
-                  <span className="drawer__item-author">{b.author}</span>
-                  <span className="drawer__item-price">৳{b.price}</span>
+                  <span className="drawer__item-author">{b.authors}</span>
+                  <span className="drawer__item-price">
+                    ৳{b.discount_price ?? b.price}
+                  </span>
                 </div>
+                <button
+                  className="drawer__item-remove"
+                  onClick={() => toggleWish(b)}
+                  aria-label={`${b.book_name} সরান`}
+                >
+                  <Trash2 size={15} />
+                </button>
               </li>
             ))}
           </ul>

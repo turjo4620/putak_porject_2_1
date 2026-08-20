@@ -1,0 +1,78 @@
+// services/wishlistService.js
+const pool = require('../config/db');
+
+async function getOrCreateWishlist(userId) {
+  const existing = await pool.query(
+    'SELECT * FROM wishlist WHERE user_id = $1',
+    [userId]
+  );
+  if (existing.rows.length) return existing.rows[0];
+
+  const created = await pool.query(
+    'INSERT INTO wishlist (user_id) VALUES ($1) RETURNING *',
+    [userId]
+  );
+  return created.rows[0];
+}
+
+async function getWishlistWithItems(userId) {
+  const wishlist = await getOrCreateWishlist(userId);
+
+  const items = await pool.query(
+    `SELECT wi.wishlist_item_id, wi.book_id, wi.added_at,
+            b.book_name, b.cover_image_url, b.authors,
+            b.price, b.discount_price
+     FROM wishlist_item wi
+     JOIN books b ON b.id = wi.book_id
+     WHERE wi.wishlist_id = $1
+     ORDER BY wi.added_at DESC`,
+    [wishlist.wishlist_id]
+  );
+
+  return { wishlist, items: items.rows };
+}
+
+// Toggle behaviour: adds the book if not present, removes it if already there.
+// Returns { action: 'added'|'removed', item? }
+async function toggleItem(userId, bookId) {
+  const wishlist = await getOrCreateWishlist(userId);
+
+  // Check if the book is already in the wishlist
+  const existing = await pool.query(
+    'SELECT wishlist_item_id FROM wishlist_item WHERE wishlist_id = $1 AND book_id = $2',
+    [wishlist.wishlist_id, bookId]
+  );
+
+  if (existing.rows.length) {
+    // Already there — remove it
+    await pool.query(
+      'DELETE FROM wishlist_item WHERE wishlist_item_id = $1',
+      [existing.rows[0].wishlist_item_id]
+    );
+    return { action: 'removed' };
+  }
+
+  // Not there — verify the book exists then add it
+  const bookCheck = await pool.query('SELECT id FROM books WHERE id = $1', [bookId]);
+  if (!bookCheck.rows.length) {
+    throw { status: 404, message: 'বই খুঁজে পাওয়া যায়নি' };
+  }
+
+  const result = await pool.query(
+    `INSERT INTO wishlist_item (wishlist_id, book_id)
+     VALUES ($1, $2)
+     RETURNING *`,
+    [wishlist.wishlist_id, bookId]
+  );
+  return { action: 'added', item: result.rows[0] };
+}
+
+async function removeItem(userId, wishlistItemId) {
+  const wishlist = await getOrCreateWishlist(userId);
+  await pool.query(
+    'DELETE FROM wishlist_item WHERE wishlist_item_id = $1 AND wishlist_id = $2',
+    [wishlistItemId, wishlist.wishlist_id]
+  );
+}
+
+module.exports = { getOrCreateWishlist, getWishlistWithItems, toggleItem, removeItem };

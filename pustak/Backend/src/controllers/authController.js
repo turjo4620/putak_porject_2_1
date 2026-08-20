@@ -52,7 +52,24 @@ const login = async (req, res) => {
     }
 };
 
+const getMe = async (req, res) => {
+    try {
+        const pool = require('../config/db');
+        const result = await pool.query(
+            'SELECT user_id, name, email, phone_number FROM users WHERE user_id = $1',
+            [req.userId]
+        );
+        if (!result.rows.length) {
+            return res.status(404).json({ message: 'ব্যবহারকারী পাওয়া যায়নি' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ message: 'প্রোফাইল লোড করা যায়নি' });
+    }
+};
+
 module.exports = {
     signup,
-    login
+    login,
+    getMe
 };
