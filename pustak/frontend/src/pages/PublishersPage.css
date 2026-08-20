@@ -24,6 +24,16 @@
   background: var(--bg-secondary);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-serif); font-size: 1.6rem; font-weight: 900; color: var(--accent);
+  overflow: hidden;
+}
+
+/* Image fills the logo box; object-fit: contain keeps logos from being cropped */
+.pub-page-card__logo-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  display: block;
 }
 .pub-page-card strong {
   font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700;

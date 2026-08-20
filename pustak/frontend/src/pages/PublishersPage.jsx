@@ -64,7 +64,17 @@ export default function PublishersPage() {
                 tabIndex={0}
                 aria-label={publication.title}
               >
-                <div className="pub-page-card__logo">{getLogoText(publication.title)}</div>
+                <div className="pub-page-card__logo">
+                  {publication.cover_image_url ? (
+                    <img
+                      src={publication.cover_image_url}
+                      alt={publication.title}
+                      className="pub-page-card__logo-img"
+                    />
+                  ) : (
+                    getLogoText(publication.title)
+                  )}
+                </div>
                 <strong>{publication.title}</strong>
               </div>
             ))}
