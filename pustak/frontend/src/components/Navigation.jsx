@@ -140,14 +140,24 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <button
-              className={`nav__icon-btn nav__icon-btn--user ${userOpen ? 'nav__icon-btn--open' : ''}`}
-              aria-label="প্রোফাইল"
-              aria-expanded={userOpen}
-              onClick={() => { setUserOpen(!userOpen); setCartOpen(false); setWishOpen(false) }}
-            >
-              <User size={20} />
-            </button>
+            {authUser ? (
+              <button
+                className={`nav__icon-btn nav__icon-btn--user ${userOpen ? 'nav__icon-btn--open' : ''}`}
+                aria-label="Profile"
+                aria-expanded={userOpen}
+                onClick={() => { setUserOpen(!userOpen); setCartOpen(false); setWishOpen(false) }}
+              >
+                <User size={20} />
+              </button>
+            ) : (
+              <button
+                className="nav__signin-btn"
+                onClick={() => navigate('/login')}
+                aria-label="Sign In"
+              >
+                Sign In
+              </button>
+            )}
 
             <button
               className="nav__hamburger"
@@ -352,6 +362,32 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               <X size={22} />
             </button>
           </div>
+          
+          {/* User section */}
+          {authUser ? (
+            <div className="nav__drawer-user">
+              <div className="nav__drawer-user-avatar">{(authUser.name || authUser.email || 'U').slice(0,1)}</div>
+              <div className="nav__drawer-user-info">
+                <p className="nav__drawer-user-name">{authUser.name || authUser.email}</p>
+                <Link to="/account/info" className="nav__drawer-user-link" onClick={() => setMobileOpen(false)}>
+                  View Profile
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="nav__drawer-signin">
+              <button 
+                className="nav__drawer-signin-btn"
+                onClick={() => { setMobileOpen(false); navigate('/login') }}
+              >
+                Sign In
+              </button>
+              <p className="nav__drawer-signin-text">
+                New user? <Link to="/register" onClick={() => setMobileOpen(false)}>Sign Up</Link>
+              </p>
+            </div>
+          )}
+
           <nav className="nav__drawer-links">
             {navLinks.map((link) => (
               <Link
@@ -364,10 +400,30 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               </Link>
             ))}
           </nav>
+          
+          {authUser && (
+            <div className="nav__drawer-account-links">
+              <Link to="/account/orders" className="nav__drawer-link" onClick={() => setMobileOpen(false)}>
+                Orders & Tracking
+              </Link>
+              <Link to="/account/wishlist" className="nav__drawer-link" onClick={() => setMobileOpen(false)}>
+                Wishlist
+              </Link>
+            </div>
+          )}
+          
           <div className="nav__drawer-footer">
             <button className="nav__drawer-dark-btn" onClick={toggleDarkMode}>
               {isDarkMode ? <><Sun size={16}/> লাইট মোড</> : <><Moon size={16}/> ডার্ক মোড</>}
             </button>
+            {authUser && (
+              <button 
+                className="nav__drawer-signout-btn"
+                onClick={() => { signOut(); setMobileOpen(false); navigate('/') }}
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>

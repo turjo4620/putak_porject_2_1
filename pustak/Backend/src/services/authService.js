@@ -8,19 +8,8 @@ const createAuthError = (message, code, status) => {
     return error;
 };
 
-const ensureUsersTable = async () => {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(255) UNIQUE NOT NULL,
-            phone_number VARCHAR(20),
-            password_hash VARCHAR(255) NOT NULL,
-            status VARCHAR(20) DEFAULT 'Active',
-            last_login TIMESTAMP
-        );
-    `);
-};
+// Users table already exists with role field instead of is_admin
+// No need to create table
 
 const normalizeSignupInput = (name, email, password) => {
     const cleanName = typeof name === 'string' ? name.trim() : '';
@@ -47,9 +36,8 @@ const normalizeSignupInput = (name, email, password) => {
     return { name: cleanName, email: cleanEmail, password: cleanPassword };
 };
 
-const signupUser = async (name, email, password) => {
+const signupUser = async (name, email, password, isAdmin = false) => {
     const normalizedInput = normalizeSignupInput(name, email, password);
-    await ensureUsersTable();
 
     const existingUser = await pool.query('SELECT user_id FROM users WHERE email = $1', [normalizedInput.email]);
     if (existingUser.rowCount > 0) {
@@ -58,15 +46,33 @@ const signupUser = async (name, email, password) => {
 
     const passwordHash = await bcrypt.hash(normalizedInput.password, 12);
     const userId = Math.floor(Date.now() / 1000);
+    const role = isAdmin ? 'admin' : 'customer';
+    
+    // Insert into users table
     const result = await pool.query(
-        'INSERT INTO users (user_id, name, email, password_hash, status) VALUES ($1, $2, $3, $4, $5) RETURNING user_id AS id, name, email',
-        [userId, normalizedInput.name, normalizedInput.email, passwordHash, 'Active']
+        'INSERT INTO users (user_id, name, email, password_hash, status, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id AS id, name, email, role',
+        [userId, normalizedInput.name, normalizedInput.email, passwordHash, 'Active', role]
     );
 
-    return result.rows[0];
+    const user = result.rows[0];
+
+    // Insert into appropriate child table
+    if (isAdmin) {
+        await pool.query(
+            'INSERT INTO admin (user_id, admin_level, department) VALUES ($1, NULL, NULL)',
+            [userId]
+        );
+    } else {
+        await pool.query(
+            'INSERT INTO customer (user_id, newsletter_opt_in) VALUES ($1, FALSE)',
+            [userId]
+        );
+    }
+
+    return user;
 };
 
-const loginUser = async (email, password) => {
+const loginUser = async (email, password, expectedRole = null) => {
     const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const cleanPassword = typeof password === 'string' ? password : '';
 
@@ -74,16 +80,25 @@ const loginUser = async (email, password) => {
         throw createAuthError('Please fill in every field.', 'EMPTY_FIELDS', 400);
     }
 
-    await ensureUsersTable();
-
     const result = await pool.query(
-        'SELECT user_id AS id, name, email, password_hash FROM users WHERE email = $1',
+        'SELECT user_id AS id, name, email, password_hash, role, status FROM users WHERE email = $1',
         [cleanEmail]
     );
 
     const user = result.rows[0];
     if (!user) {
         throw createAuthError('We could not find an account with that email.', 'INVALID_CREDENTIALS', 401);
+    }
+
+    // Check if user account is active
+    if (user.status !== 'Active') {
+        throw createAuthError('Your account is not active. Please contact support.', 'INACTIVE_ACCOUNT', 403);
+    }
+
+    // Verify role matches expected role (customer or admin)
+    if (expectedRole && user.role !== expectedRole) {
+        const roleLabel = expectedRole === 'admin' ? 'Admin' : 'Customer';
+        throw createAuthError(`This account is not registered as ${roleLabel}. Please use the correct login type.`, 'ROLE_MISMATCH', 403);
     }
 
     const isValidPassword = await bcrypt.compare(cleanPassword, user.password_hash);
@@ -93,7 +108,7 @@ const loginUser = async (email, password) => {
 
     await pool.query('UPDATE users SET last_login = NOW() WHERE user_id = $1', [user.id]);
 
-    return { id: user.id, name: user.name, email: user.email };
+    return { id: user.id, name: user.name, email: user.email, role: user.role };
 };
 
 module.exports = {

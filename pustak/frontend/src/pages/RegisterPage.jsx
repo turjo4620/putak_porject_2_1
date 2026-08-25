@@ -17,7 +17,12 @@ async function parseApiResponse(response) {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    password: '',
+    accountType: 'customer' // default to customer
+  })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
@@ -32,7 +37,12 @@ export default function RegisterPage() {
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password })
+        body: JSON.stringify({ 
+          name: form.name, 
+          email: form.email, 
+          password: form.password,
+          is_admin: form.accountType === 'admin' // convert to boolean
+        })
       })
 
       const data = await parseApiResponse(response)
@@ -61,6 +71,24 @@ export default function RegisterPage() {
         <h1 className="auth-title">নিবন্ধন করুন</h1>
         <p className="auth-sub">নতুন অ্যাকাউন্ট তৈরি করুন</p>
         <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-field">
+            <label htmlFor="accountType">অ্যাকাউন্ট ধরন</label>
+            <select 
+              id="accountType" 
+              value={form.accountType} 
+              onChange={set('accountType')}
+              className="auth-select"
+              required
+            >
+              <option value="customer">গ্রাহক (Customer)</option>
+              <option value="admin">অ্যাডমিন (Admin)</option>
+            </select>
+            <small className="auth-hint">
+              {form.accountType === 'admin' 
+                ? '⚠️ অ্যাডমিন অ্যাকাউন্ট বই, অর্ডার এবং ব্যবহারকারী পরিচালনা করতে পারে'
+                : 'গ্রাহক অ্যাকাউন্ট বই ব্রাউজ এবং ক্রয় করতে পারে'}
+            </small>
+          </div>
           <div className="auth-field">
             <label htmlFor="name">পুরো নাম</label>
             <input id="name" type="text" placeholder="আপনার নাম" value={form.name} onChange={set('name')} required />

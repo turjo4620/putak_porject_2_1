@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
-const getAllPublications = async () => {
-  const query = `
+const getAllPublications = async (searchTerm = '') => {
+  let query = `
     SELECT
       publications.publication_id,
       publications.title,
@@ -10,11 +10,17 @@ const getAllPublications = async () => {
       COUNT(book_publication_create.book_id) AS book_count
     FROM publications
     LEFT JOIN book_publication_create ON publications.publication_id = book_publication_create.publication_id
-    GROUP BY publications.publication_id
-    ORDER BY publications.title ASC
   `;
 
-  const result = await pool.query(query);
+  const params = [];
+  if (searchTerm) {
+    query += ` WHERE publications.title ILIKE $1`;
+    params.push(`%${searchTerm}%`);
+  }
+
+  query += ` GROUP BY publications.publication_id ORDER BY publications.title ASC`;
+
+  const result = await pool.query(query, params);
   return result.rows;
 };
 
@@ -28,7 +34,39 @@ const getPublicationByID = async (id) => {
   return result.rows[0];
 };
 
+const createPublication = async (publicationData) => {
+  const { title, bio, cover_image_url } = publicationData;
+  const query = `
+    INSERT INTO publications (title, bio, cover_image_url)
+    VALUES ($1, $2, $3)
+    RETURNING *
+  `;
+  const result = await pool.query(query, [title, bio || null, cover_image_url || null]);
+  return result.rows[0];
+};
+
+const updatePublication = async (id, publicationData) => {
+  const { title, bio, cover_image_url } = publicationData;
+  const query = `
+    UPDATE publications
+    SET title = $1, bio = $2, cover_image_url = $3
+    WHERE publication_id = $4
+    RETURNING *
+  `;
+  const result = await pool.query(query, [title, bio || null, cover_image_url || null, id]);
+  return result.rows[0];
+};
+
+const deletePublication = async (id) => {
+  const query = 'DELETE FROM publications WHERE publication_id = $1 RETURNING *';
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
+
 module.exports = {
   getAllPublications,
   getPublicationByID,
+  createPublication,
+  updatePublication,
+  deletePublication
 };

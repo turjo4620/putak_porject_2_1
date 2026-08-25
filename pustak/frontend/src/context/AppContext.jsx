@@ -38,12 +38,13 @@ export function AppProvider({ children }) {
     try {
       localStorage.removeItem('pustak-auth-user')
       localStorage.removeItem('pustak-auth-token')
+      localStorage.removeItem('pustak-user-type')
+      localStorage.removeItem('adminToken')
     } catch (e) {
       // ignore
     }
     setAuthUserState(null)
     setCartItems([])
-    setWishItems([])
   }
 
   // Database (books listing)

@@ -41,6 +41,9 @@ const orderRoutes = require("./src/routes/orderRoutes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
 const wishlistRoutes = require("./src/routes/wishlistRoutes");
 
+// Admin routes
+const adminRoutes = require('./src/routes/adminRoutes');
+
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -51,6 +54,9 @@ app.use('/api/authors', authorRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/publications', publicationRoutes);
 app.use('/api/categories', categoryRoutes);
+
+// Admin panel API
+app.use('/api/admin', adminRoutes);
 
 // ─── Global error handler ───────────────────────────────────────────────────
 // Services throw plain objects { status, message } for expected errors.

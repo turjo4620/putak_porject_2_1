@@ -19,7 +19,7 @@ async function parseApiResponse(response) {
 export default function LoginPage() {
   const navigate = useNavigate()
   const { setAuthUser, authUser } = useApp()
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ email: '', password: '', userType: 'customer' })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
@@ -38,7 +38,12 @@ export default function LoginPage() {
     setMessage({ type: '', text: '' })
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      // Use different endpoint based on user type
+      const endpoint = form.userType === 'admin' 
+        ? `${API_BASE_URL}/api/auth/admin/login`
+        : `${API_BASE_URL}/api/auth/login`
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, password: form.password })
@@ -50,11 +55,21 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('pustak-auth-token', data.token)
+      // Store user type for future reference
+      localStorage.setItem('pustak-user-type', form.userType)
+      
+      // If admin, also store as adminToken so admin panel can read it
+      if (form.userType === 'admin') {
+        localStorage.setItem('adminToken', data.token)
+      }
+      
       // update app context so navigation shows user menu
       setAuthUser(data.user)
       setMessage({ type: 'success', text: data.message })
-      // show success briefly then navigate home so user sees message and navigation opens account drawer
-      setTimeout(() => navigate('/'), 700)
+      
+      // Navigate to appropriate page
+      const destination = form.userType === 'admin' ? '/admin/dashboard' : '/'
+      setTimeout(() => navigate(destination), 700)
     } catch (error) {
       const friendlyMessage = error.message.includes('Unexpected token')
         ? 'The authentication service is unavailable. Make sure the backend is running.'
@@ -68,29 +83,52 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <Link to="/" className="auth-logo">পুস্তক</Link>
-        <h1 className="auth-title">লগইন করুন</h1>
-        <p className="auth-sub">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>
+        <h1 className="auth-title">Sign In</h1>
+        <p className="auth-sub">Welcome back! Please login to your account</p>
+        
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-field">
-            <label htmlFor="email">ইমেইল</label>
+            <label htmlFor="userType">Login As</label>
+            <select 
+              id="userType" 
+              value={form.userType} 
+              onChange={set('userType')}
+              className="auth-select"
+              required
+            >
+              <option value="customer">Customer</option>
+              <option value="admin">Admin</option>
+            </select>
+            <small className="auth-hint">
+              {form.userType === 'admin' 
+                ? '⚠️ Admin account has access to management dashboard'
+                : 'Customer account for browsing and purchasing books'}
+            </small>
+          </div>
+
+          <div className="auth-field">
+            <label htmlFor="email">Email</label>
             <input id="email" type="email" placeholder="your@email.com" value={form.email} onChange={set('email')} required />
           </div>
+          
           <div className="auth-field">
-            <label htmlFor="password">পাসওয়ার্ড</label>
+            <label htmlFor="password">Password</label>
             <input id="password" type="password" placeholder="••••••••" value={form.password} onChange={set('password')} required />
           </div>
+          
           {message.text ? (
             <p className={`auth-message ${message.type}`} role="status" aria-live="polite">
               {message.text}
             </p>
           ) : null}
+          
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'সাইন ইন হচ্ছে…' : 'লগইন'}
+            {loading ? 'Signing In…' : 'Sign In'}
           </button>
         </form>
+        
         <p className="auth-switch">
-          অ্যাকাউন্ট নেই? <Link to="/register">নিবন্ধন করুন</Link>
+          Don't have an account? <Link to="/register">Sign Up</Link>
         </p>
       </div>
     </div>

@@ -32,6 +32,20 @@ import AccountWishlist        from './pages/AccountWishlist'
 import AccountReviews         from './pages/AccountReviews'
 import PaymentPage            from './pages/PaymentPage'
 
+// Import Admin components
+import AdminLogin from './pages/admin/AdminLogin.jsx'
+import AdminLayout from './pages/admin/AdminLayout.jsx'
+import AdminDashboard from './pages/admin/AdminDashboard.jsx'
+import AdminBooks from './pages/admin/AdminBooks.jsx'
+import AdminAuthors from './pages/admin/AdminAuthors.jsx'
+import AdminPublications from './pages/admin/AdminPublications.jsx'
+import AdminCategories from './pages/admin/AdminCategories.jsx'
+import AdminUsers from './pages/admin/AdminUsers.jsx'
+import AdminOrders from './pages/admin/AdminOrders.jsx'
+import AdminReviews from './pages/admin/AdminReviews.jsx'
+import AdminAnalytics from './pages/admin/AdminAnalytics.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) }, [pathname])
@@ -39,11 +53,14 @@ function ScrollToTop() {
 }
 
 function Layout({ children, isDarkMode, toggleDarkMode }) {
+  const location = useLocation()
+  const isAdminRoute = location.pathname.startsWith('/admin')
+
   return (
     <div className="app">
-      <Navigation isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      {!isAdminRoute && <Navigation isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />}
       <main>{children}</main>
-      <Footer />
+      {!isAdminRoute && <Footer />}
     </div>
   )
 }
@@ -90,6 +107,21 @@ export default function App() {
               <Route path="orders" element={<AccountOrders />} />
               <Route path="wishlist" element={<AccountWishlist />} />
               <Route path="reviews" element={<AccountReviews />} />
+            </Route>
+
+            {/* --- ADMIN ROUTES --- */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="books" element={<AdminBooks />} />
+              <Route path="authors" element={<AdminAuthors />} />
+              <Route path="publications" element={<AdminPublications />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="reviews" element={<AdminReviews />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
             </Route>
 
             <Route path="/orders"            element={<LoginPage />} />

@@ -1,17 +1,24 @@
 .auth-page {
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   padding: var(--space-6);
+  padding-top: 100px;
   background: var(--bg-primary);
 }
 .auth-card {
-  width: 100%; max-width: 420px;
+  width: 100%; 
+  max-width: 440px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
-  padding: var(--space-10) var(--space-8);
+  padding: var(--space-8) var(--space-8);
   box-shadow: var(--shadow-lg);
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: var(--space-3);
 }
 .auth-logo {
   font-family: var(--font-serif); font-size: 1.8rem; font-weight: 900;
@@ -50,6 +57,78 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(30,58,47,0.08);
 }
+
+/* Select dropdown for account type */
+.auth-field select,
+.auth-select {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem; 
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.auth-field select:focus,
+.auth-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(30,58,47,0.08);
+}
+
+.auth-field select:hover,
+.auth-select:hover {
+  border-color: var(--accent);
+}
+
+/* Hint text under select */
+.auth-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  margin-top: var(--space-1);
+  line-height: 1.4;
+  display: block;
+}
+
+.auth-radio-group {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+
+.auth-radio-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.auth-radio-label:hover {
+  background: var(--bg-secondary);
+}
+
+.auth-radio-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+  margin: 0;
+  padding: 0;
+}
+
+.auth-radio-text {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 .auth-btn {
   width: 100%; padding: var(--space-3);
   background: var(--color-charcoal); color: white;
