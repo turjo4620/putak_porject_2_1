@@ -294,8 +294,8 @@ const getBookById = async (req, res) => {
   try {
     const bookId = parseInt(req.params.id);
 
-    // Fetching ALL the columns from your specific schema!
-    const query = `
+    // Get book details
+    const bookQuery = `
       SELECT 
         books.id, 
         books.book_name, 
@@ -303,8 +303,6 @@ const getBookById = async (req, res) => {
         books.price, 
         books.discount_price,
         books.discount_percentage,
-        books.publisher,
-        books.category,
         books.isbn,
         books.language,
         books.num_pages,
@@ -312,21 +310,56 @@ const getBookById = async (req, res) => {
         books.rating,
         books.num_reviews,
         books.availability,
-        books.description,
-        authors.name AS author
+        books.description
       FROM books
-      LEFT JOIN book_author ON books.id = book_author.book_id
-      LEFT JOIN authors ON book_author.author_id = authors.author_id
       WHERE books.id = $1
     `;
     
-    const { rows } = await pool.query(query, [bookId]);
+    const bookResult = await pool.query(bookQuery, [bookId]);
 
-    if (rows.length === 0) {
+    if (bookResult.rows.length === 0) {
       return res.status(404).json({ error: "Book not found" });
     }
 
-    res.status(200).json(rows[0]);
+    const book = bookResult.rows[0];
+
+    // Get authors
+    const authorsQuery = `
+      SELECT authors.author_id, authors.name, authors.photo_url
+      FROM authors
+      JOIN book_author ON authors.author_id = book_author.author_id
+      WHERE book_author.book_id = $1
+    `;
+    const authorsResult = await pool.query(authorsQuery, [bookId]);
+
+    // Get publications
+    const publicationsQuery = `
+      SELECT publications.publication_id, publications.title, publications.cover_image_url
+      FROM publications
+      JOIN book_publication_create ON publications.publication_id = book_publication_create.publication_id
+      WHERE book_publication_create.book_id = $1
+    `;
+    const publicationsResult = await pool.query(publicationsQuery, [bookId]);
+
+    // Get categories
+    const categoriesQuery = `
+      SELECT categories.category_id, categories.category_name
+      FROM categories
+      JOIN book_category ON categories.category_id = book_category.category_id
+      WHERE book_category.book_id = $1
+    `;
+    const categoriesResult = await pool.query(categoriesQuery, [bookId]);
+
+    // Combine all data
+    const response = {
+      ...book,
+      authors: authorsResult.rows,
+      author: authorsResult.rows.length > 0 ? authorsResult.rows[0].name : null,
+      publications: publicationsResult.rows,
+      categories: categoriesResult.rows
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
     console.error(error.message);

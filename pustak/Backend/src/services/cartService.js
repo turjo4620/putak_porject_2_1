@@ -24,11 +24,17 @@ async function getAvailableStock(bookId) {
 async function getCartWithItems(userId) {
   const cart = await getOrCreateCart(userId);
   const items = await pool.query(
-    `SELECT ci.cart_item_id, ci.book_id, ci.quantity, ci.locked_price,
-            b.book_name, b.cover_image_url, b.authors, b.price, b.discount_price
+    `SELECT ci.cart_item_id, ci.book_id, ci.quantity,
+            b.book_name, b.cover_image_url, b.price, b.discount_price,
+            COALESCE(b.discount_price, b.price) AS locked_price,
+            MIN(a.name) AS author,
+            MIN(a.name) AS authors
      FROM cart_item ci
      JOIN books b ON b.id = ci.book_id
+     LEFT JOIN book_author ba ON b.id = ba.book_id
+     LEFT JOIN authors a ON ba.author_id = a.author_id
      WHERE ci.cart_id = $1
+     GROUP BY ci.cart_item_id, ci.book_id, ci.quantity, b.book_name, b.cover_image_url, b.price, b.discount_price
      ORDER BY ci.cart_item_id`,
     [cart.cart_id]
   );
@@ -66,12 +72,12 @@ async function addItem(userId, bookId, quantity = 1) {
   }
 
   const result = await pool.query(
-    `INSERT INTO cart_item (cart_id, book_id, quantity, locked_price)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO cart_item (cart_id, book_id, quantity)
+     VALUES ($1, $2, $3)
      ON CONFLICT (cart_id, book_id)
      DO UPDATE SET quantity = cart_item.quantity + EXCLUDED.quantity
      RETURNING *`,
-    [cart.cart_id, bookId, quantity, price]
+    [cart.cart_id, bookId, quantity]
   );
 
   await pool.query(

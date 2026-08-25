@@ -48,15 +48,18 @@ async function placeOrderFromCart(userId, addressId) {
         };
       }
 
+      // Use current price from book (discount_price if available, otherwise regular price)
+      const pricePerUnit = it.discount_price ?? it.price;
+      
       reservations.push({
         copyIds: copiesRes.rows.map((r) => r.copy_id),
-        pricePerUnit: it.locked_price,
+        pricePerUnit: pricePerUnit,
       });
     }
 
     // Step 2: create the order
     const totalAmount = items.reduce(
-      (sum, it) => sum + Number(it.locked_price) * it.quantity,
+      (sum, it) => sum + Number(it.discount_price ?? it.price) * it.quantity,
       0
     );
     const orderNumber = generateOrderNumber();
@@ -73,8 +76,8 @@ async function placeOrderFromCart(userId, addressId) {
     for (const r of reservations) {
       for (const copyId of r.copyIds) {
         await client.query(
-          `INSERT INTO order_item (order_id, copy_id, price_sold, quantity)
-           VALUES ($1, $2, $3, 1)`,
+          `INSERT INTO order_items (order_id, copy_id, unit_price, subtotal)
+           VALUES ($1, $2, $3, $3)`,
           [order.order_id, copyId, r.pricePerUnit]
         );
         await client.query(
@@ -106,16 +109,18 @@ async function getOrderById(userId, orderId) {
     throw { status: 404, message: 'অর্ডার খুঁজে পাওয়া যায়নি' };
   }
 
-  // Group by book so 3 order_item rows for the same book show as one line
   const itemsRes = await pool.query(
-    `SELECT b.id AS book_id, b.book_name, b.cover_image_url, b.authors,
+    `SELECT b.id AS book_id, b.book_name, b.cover_image_url,
+            MIN(a.name) AS author,
             COUNT(*)::int AS quantity,
-            SUM(oi.price_sold)::numeric(10,2) AS line_total
-     FROM order_item oi
+            SUM(oi.subtotal)::numeric(10,2) AS line_total
+     FROM order_items oi
      JOIN book_copy bc ON bc.copy_id = oi.copy_id
      JOIN books b ON b.id = bc.book_id
+     LEFT JOIN book_author ba ON b.id = ba.book_id
+     LEFT JOIN authors a ON ba.author_id = a.author_id
      WHERE oi.order_id = $1
-     GROUP BY b.id, b.book_name, b.cover_image_url, b.authors`,
+     GROUP BY b.id, b.book_name, b.cover_image_url`,
     [orderId]
   );
 
