@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 // Import
-const { getBooks, searchBooks, getBooksByAuthor, getBooksByPublication, getBooksByCategory, getBookById } = require('../controllers/bookController');
+const { getBooks, searchBooks, getBooksByAuthor, getBooksByPublication, getBooksByCategory, getBookById, getBestsellers } = require('../controllers/bookController');
 
 // Search
 router.get('/search', searchBooks);
+
+// Bestsellers
+router.get('/bestsellers', getBestsellers);
 
 router.get('/author/:id', getBooksByAuthor);
 router.get('/publication/:id', getBooksByPublication);

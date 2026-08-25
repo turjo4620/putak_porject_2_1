@@ -75,10 +75,11 @@ async function placeOrderFromCart(userId, addressId) {
     // Step 3: one order_item per physical copy, mark each copy sold
     for (const r of reservations) {
       for (const copyId of r.copyIds) {
+        const price = r.pricePerUnit;
         await client.query(
           `INSERT INTO order_items (order_id, copy_id, unit_price, subtotal)
-           VALUES ($1, $2, $3, $3)`,
-          [order.order_id, copyId, r.pricePerUnit]
+           VALUES ($1, $2, $3, $4)`,
+          [order.order_id, copyId, price, price]
         );
         await client.query(
           `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,
@@ -149,7 +150,7 @@ async function getTrackingInfo(userId, orderId) {
   }
 
   const deliveryRes = await pool.query(
-    `SELECT delivery_id, tracking_no, courier_name, delivered_via,
+    `SELECT delivery_id, tracking_no, delivered_via,
             dispatch_date, est_date, delivered_at, status
      FROM deliveries
      WHERE order_id = $1`,

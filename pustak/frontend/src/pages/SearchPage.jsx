@@ -1,21 +1,47 @@
 import { useSearchParams, Link } from 'react-router-dom'
-import { bestSellers, newReleases } from '../data/books'
+import { useState, useEffect } from 'react'
 import BookCard from '../components/BookCard'
 import './ListPage.css'
-
-const allBooks = [...bestSellers, ...newReleases]
 
 export default function SearchPage() {
   const [params] = useSearchParams()
   const q = params.get('q') || ''
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const results = allBooks.filter(
-    (b) =>
-      b.title.includes(q) ||
-      b.author.includes(q) ||
-      b.category.includes(q) ||
-      b.publisher.includes(q)
-  )
+  useEffect(() => {
+    const searchBooks = async () => {
+      if (!q.trim()) {
+        setResults([])
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const response = await fetch(`http://localhost:5000/api/books/search?q=${encodeURIComponent(q)}&limit=100`)
+        const data = await response.json()
+        setResults(data.data || [])
+      } catch (error) {
+        console.error('Error searching books:', error)
+        setResults([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    searchBooks()
+  }, [q])
+
+  if (loading) {
+    return (
+      <div className="list-page">
+        <div className="container">
+          <p style={{ textAlign: 'center', padding: '2rem' }}>খুঁজছি...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="list-page">

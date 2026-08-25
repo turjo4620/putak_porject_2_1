@@ -367,11 +367,51 @@ const getBookById = async (req, res) => {
   }
 };
 
+const getBestsellers = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 20;
+
+    // Query to get books ordered by number of sales
+    // Count how many times each book appears in order_items (via book_copy)
+    const query = `
+      SELECT 
+        b.id, 
+        b.book_name, 
+        b.cover_image_url, 
+        b.price, 
+        b.discount_price,
+        b.discount_percentage,
+        MIN(a.name) AS author,
+        COUNT(oi.order_item_id) AS sales_count
+      FROM books b
+      LEFT JOIN book_copy bc ON b.id = bc.book_id
+      LEFT JOIN order_items oi ON bc.copy_id = oi.copy_id
+      LEFT JOIN book_author ba ON b.id = ba.book_id
+      LEFT JOIN authors a ON ba.author_id = a.author_id
+      GROUP BY b.id, b.book_name, b.cover_image_url, b.price, b.discount_price, b.discount_percentage
+      ORDER BY sales_count DESC, b.id ASC
+      LIMIT $1
+    `;
+    
+    const { rows } = await pool.query(query, [limit]);
+
+    res.status(200).json({
+      data: rows,
+      total: rows.length
+    });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Error fetching bestsellers" });
+  }
+};
+
 module.exports = {
     getBooks,
     searchBooks,
     getBooksByAuthor,
     getBooksByPublication,
     getBooksByCategory,
-    getBookById
+    getBookById,
+    getBestsellers
 }

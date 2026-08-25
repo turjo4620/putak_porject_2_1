@@ -10,7 +10,8 @@ const AccountWishlist = () => {
   const handleAddToCart = async (book) => {
     if (!authUser) { navigate('/login'); return }
     try {
-      await addToCart(book)
+      // wishlist items have book_id, but addToCart expects id
+      await addToCart({ ...book, id: book.book_id || book.id })
     } catch (err) {
       alert(err.message || 'কার্টে যোগ করা যায়নি')
     }
@@ -43,11 +44,11 @@ const AccountWishlist = () => {
         /* Item grid */
         <div className="wishlist-grid">
           {wishItems.map((book) => (
-            <div key={book.id} className="wishlist-card card">
+            <div key={book.book_id || book.id} className="wishlist-card card">
               {/* Cover */}
               <div
                 className="wishlist-card__cover"
-                onClick={() => navigate(`/book/${book.id}`)}
+                onClick={() => navigate(`/book/${book.book_id || book.id}`)}
                 role="button"
                 tabIndex={0}
                 aria-label={book.title}
@@ -63,7 +64,7 @@ const AccountWishlist = () => {
               <div className="wishlist-card__info">
                 <strong
                   className="wishlist-card__title"
-                  onClick={() => navigate(`/book/${book.id}`)}
+                  onClick={() => navigate(`/book/${book.book_id || book.id}`)}
                   role="button"
                   tabIndex={0}
                 >

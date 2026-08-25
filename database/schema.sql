@@ -14,11 +14,15 @@ CREATE TABLE books (
     description          TEXT
 );
 
-select * from book_copy;
+-- select * from book_copy;
+-- ALTER table deliveries 
+-- add column delivery_charge INT
 
+alter table deliveries
+drop column delivered_via
 -- ALTER TABLE books
 -- ALTER COLUMN edition TYPE VARCHAR(20);
-
+select* from books;
 -- ALTER TABLE books
 -- ALTER COLUMN format TYPE CHAR(20)
 
