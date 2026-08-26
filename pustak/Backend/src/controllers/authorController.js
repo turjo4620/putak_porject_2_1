@@ -4,7 +4,7 @@ const getAuthors = async (req, res) => {
     try {
         const { search } = req.query;
         const authors = await authorService.getAllAuthors(search);
-        res.status(200).json(authors);
+        res.status(200).json({ success: true, data: authors });
     } catch (error) {
         console.error("Error fetching authors:", error.message);
         res.status(500).json({ success: false, message: "Server Error" });

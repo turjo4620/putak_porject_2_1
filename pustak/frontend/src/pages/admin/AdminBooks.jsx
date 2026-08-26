@@ -65,9 +65,15 @@ export default function AdminBooks() {
         })
       ]);
 
-      setCategories(await categoriesRes.json());
-      setAuthors(await authorsRes.json());
-      setPublications(await publicationsRes.json());
+      const [categoriesData, authorsData, publicationsData] = await Promise.all([
+        categoriesRes.json(),
+        authorsRes.json(),
+        publicationsRes.json()
+      ]);
+
+      setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData.data || []));
+      setAuthors(Array.isArray(authorsData) ? authorsData : (authorsData.data || []));
+      setPublications(Array.isArray(publicationsData) ? publicationsData : (publicationsData.data || []));
     } catch (error) {
       console.error('Error fetching metadata:', error);
     }

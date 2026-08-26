@@ -4,7 +4,7 @@ const getCategories = async (req, res) => {
     try {
         const { search } = req.query;
         const categories = await categoryService.getAllCategories(search);
-        res.status(200).json(categories);
+        res.status(200).json({ success: true, data: categories });
     } catch (error) {
         console.error("Error fetching categories:", error.message);
         res.status(500).json({ success: false, message: "Server Error" });

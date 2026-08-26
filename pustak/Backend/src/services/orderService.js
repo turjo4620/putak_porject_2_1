@@ -77,9 +77,9 @@ async function placeOrderFromCart(userId, addressId) {
       for (const copyId of r.copyIds) {
         const price = r.pricePerUnit;
         await client.query(
-          `INSERT INTO order_items (order_id, copy_id, unit_price, subtotal)
-           VALUES ($1, $2, $3, $4)`,
-          [order.order_id, copyId, price, price]
+          `INSERT INTO order_item (order_id, copy_id, price_sold)
+           VALUES ($1, $2, $3)`,
+          [order.order_id, copyId, price]
         );
         await client.query(
           `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,
@@ -114,8 +114,8 @@ async function getOrderById(userId, orderId) {
     `SELECT b.id AS book_id, b.book_name, b.cover_image_url,
             MIN(a.name) AS author,
             COUNT(*)::int AS quantity,
-            SUM(oi.subtotal)::numeric(10,2) AS line_total
-     FROM order_items oi
+            SUM(oi.price_sold)::numeric(10,2) AS line_total
+     FROM order_item oi
      JOIN book_copy bc ON bc.copy_id = oi.copy_id
      JOIN books b ON b.id = bc.book_id
      LEFT JOIN book_author ba ON b.id = ba.book_id

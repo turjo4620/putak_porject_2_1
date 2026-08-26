@@ -14,11 +14,23 @@ class AdminService {
         SELECT COUNT(*) as pending FROM orders WHERE status = 'Pending'
       `),
       pool.query(`
-        SELECT COUNT(*) as low_stock FROM book_copies 
-        WHERE available_stock < 10 AND available_stock > 0
+        SELECT COUNT(*) as low_stock
+        FROM (
+          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') AS in_stock_count
+          FROM book_copy
+          GROUP BY book_id
+          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') < 10
+             AND COUNT(*) FILTER (WHERE status = 'in_stock') > 0
+        ) sub
       `),
       pool.query(`
-        SELECT COUNT(*) as out_of_stock FROM book_copies WHERE available_stock = 0
+        SELECT COUNT(*) as out_of_stock
+        FROM (
+          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') AS in_stock_count
+          FROM book_copy
+          GROUP BY book_id
+          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') = 0
+        ) sub
       `)
     ];
 
@@ -103,13 +115,13 @@ class AdminService {
           ) FILTER (WHERE c.category_id IS NOT NULL),
           '[]'
         ) as categories,
-        COALESCE(SUM(cop.available_stock), 0) as total_stock
+        COUNT(cop.copy_id) FILTER (WHERE cop.status = 'in_stock') as total_stock
       FROM books b
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
       LEFT JOIN book_category bc ON b.id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
-      LEFT JOIN book_copies cop ON b.id = cop.book_id
+      LEFT JOIN book_copy cop ON b.id = cop.book_id
       ${whereClause}
       GROUP BY b.id
       ORDER BY b.id DESC
@@ -171,7 +183,7 @@ class AdminService {
           ) FILTER (WHERE c.category_id IS NOT NULL),
           '[]'
         ) as categories,
-        COALESCE(SUM(cop.available_stock), 0) as total_stock
+        COUNT(cop.copy_id) FILTER (WHERE cop.status = 'in_stock') as total_stock
       FROM books b
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
@@ -179,7 +191,7 @@ class AdminService {
       LEFT JOIN publications p ON bpc.publication_id = p.publication_id
       LEFT JOIN book_category bc ON b.id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
-      LEFT JOIN book_copies cop ON b.id = cop.book_id
+      LEFT JOIN book_copy cop ON b.id = cop.book_id
       WHERE b.id = $1
       GROUP BY b.id
     `, [bookId]);
@@ -246,12 +258,14 @@ class AdminService {
         }
       }
 
-      // Create book copies for stock
+      // Create book copies for stock — one row per unit with status 'in_stock'
       if (bookData.stock_quantity && bookData.stock_quantity > 0) {
-        await client.query(`
-          INSERT INTO book_copies (book_id, available_stock, condition)
-          VALUES ($1, $2, $3)
-        `, [book.id, bookData.stock_quantity, 'New']);
+        for (let i = 0; i < bookData.stock_quantity; i++) {
+          await client.query(`
+            INSERT INTO book_copy (book_id, status, condition)
+            VALUES ($1, 'in_stock', 'new')
+          `, [book.id]);
+        }
       }
 
       await client.query('COMMIT');
@@ -347,22 +361,35 @@ class AdminService {
   }
 
   async updateBookStock(bookId, quantity) {
-    const result = await pool.query(`
-      UPDATE book_copies 
-      SET available_stock = $1 
-      WHERE book_id = $2
-      RETURNING *
-    `, [quantity, bookId]);
+    // Get current in_stock count
+    const currentRes = await pool.query(
+      `SELECT COUNT(*) as current FROM book_copy WHERE book_id = $1 AND status = 'in_stock'`,
+      [bookId]
+    );
+    const current = parseInt(currentRes.rows[0].current);
+    const diff = quantity - current;
 
-    if (result.rows.length === 0) {
-      // Create new stock entry if doesn't exist
+    if (diff > 0) {
+      // Add more in_stock copies
+      for (let i = 0; i < diff; i++) {
+        await pool.query(
+          `INSERT INTO book_copy (book_id, status, condition) VALUES ($1, 'in_stock', 'new')`,
+          [bookId]
+        );
+      }
+    } else if (diff < 0) {
+      // Mark excess copies as removed (set status to 'removed')
       await pool.query(`
-        INSERT INTO book_copies (book_id, available_stock, condition)
-        VALUES ($1, $2, 'New')
-      `, [bookId, quantity]);
+        UPDATE book_copy SET status = 'removed'
+        WHERE copy_id IN (
+          SELECT copy_id FROM book_copy
+          WHERE book_id = $1 AND status = 'in_stock'
+          LIMIT $2
+        )
+      `, [bookId, Math.abs(diff)]);
     }
 
-    return result.rows[0];
+    return { book_id: bookId, in_stock: quantity };
   }
 
   // ============= USER MANAGEMENT =============
@@ -469,7 +496,7 @@ class AdminService {
         o.*,
         u.name as user_name,
         u.email as user_email,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+        (SELECT COUNT(*) FROM order_item WHERE order_id = o.order_id) as item_count
       FROM orders o
       JOIN users u ON o.user_id = u.user_id
       WHERE ${whereClause}
@@ -524,10 +551,9 @@ class AdminService {
       SELECT 
         oi.*,
         b.book_name,
-        b.cover_image_url,
-        bc.isbn
-      FROM order_items oi
-      JOIN book_copies bc ON oi.copy_id = bc.copy_id
+        b.cover_image_url
+      FROM order_item oi
+      JOIN book_copy bc ON oi.copy_id = bc.copy_id
       JOIN books b ON bc.book_id = b.id
       WHERE oi.order_id = $1
     `, [orderId]);
@@ -589,7 +615,7 @@ class AdminService {
       JOIN users u ON r.user_id = u.user_id
       JOIN books b ON r.book_id = b.id
       WHERE ${whereClause}
-      ORDER BY r.review_date DESC
+      ORDER BY r.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 
@@ -654,11 +680,11 @@ class AdminService {
         b.cover_image_url,
         b.price,
         COUNT(oi.order_item_id) as order_count,
-        SUM(oi.quantity) as total_sold,
-        SUM(oi.unit_price * oi.quantity) as revenue
+        COUNT(oi.order_item_id) as total_sold,
+        SUM(oi.price_sold) as revenue
       FROM books b
-      JOIN book_copies bc ON b.id = bc.book_id
-      JOIN order_items oi ON bc.copy_id = oi.copy_id
+      JOIN book_copy bc ON b.id = bc.book_id
+      JOIN order_item oi ON bc.copy_id = oi.copy_id
       JOIN orders o ON oi.order_id = o.order_id
       WHERE o.status NOT IN ('Cancelled', 'Returned')
       GROUP BY b.id, b.book_name, b.cover_image_url, b.price
@@ -678,8 +704,8 @@ class AdminService {
         COUNT(oi.order_item_id) as order_count
       FROM categories c
       LEFT JOIN book_category bc ON c.category_id = bc.category_id
-      LEFT JOIN book_copies cop ON bc.book_id = cop.book_id
-      LEFT JOIN order_items oi ON cop.copy_id = oi.copy_id
+      LEFT JOIN book_copy cop ON bc.book_id = cop.book_id
+      LEFT JOIN order_item oi ON cop.copy_id = oi.copy_id
       GROUP BY c.category_id, c.category_name
       ORDER BY order_count DESC
       LIMIT 10
@@ -694,11 +720,12 @@ class AdminService {
         b.id,
         b.book_name,
         b.cover_image_url,
-        SUM(bc.available_stock) as total_stock
+        COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') as total_stock
       FROM books b
-      JOIN book_copies bc ON b.id = bc.book_id
+      JOIN book_copy bc ON b.id = bc.book_id
       GROUP BY b.id, b.book_name, b.cover_image_url
-      HAVING SUM(bc.available_stock) < 10 AND SUM(bc.available_stock) > 0
+      HAVING COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') < 10
+         AND COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') > 0
       ORDER BY total_stock ASC
     `);
 
@@ -712,9 +739,9 @@ class AdminService {
         b.book_name,
         b.cover_image_url
       FROM books b
-      LEFT JOIN book_copies bc ON b.id = bc.book_id
+      LEFT JOIN book_copy bc ON b.id = bc.book_id
       GROUP BY b.id, b.book_name, b.cover_image_url
-      HAVING COALESCE(SUM(bc.available_stock), 0) = 0
+      HAVING COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') = 0
       ORDER BY b.book_name
     `);
 

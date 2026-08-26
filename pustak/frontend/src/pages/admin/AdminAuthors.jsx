@@ -28,7 +28,7 @@ export default function AdminAuthors() {
       if (!response.ok) throw new Error('Failed to fetch authors');
 
       const data = await response.json();
-      setAuthors(Array.isArray(data) ? data : []);
+      setAuthors(Array.isArray(data) ? data : (data.data || []));
     } catch (error) {
       console.error('Error fetching authors:', error);
       setAuthors([]);
