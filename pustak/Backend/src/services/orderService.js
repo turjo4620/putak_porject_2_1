@@ -89,11 +89,7 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
         await client.query(
           `INSERT INTO order_item (order_id, copy_id, price_sold)
            VALUES ($1, $2, $3)`,
-<<<<<<< HEAD
-          [order.order_id, copyId, price]
-=======
           [order.order_id, copyId, r.pricePerUnit]
->>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
         );
         await client.query(
           `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,

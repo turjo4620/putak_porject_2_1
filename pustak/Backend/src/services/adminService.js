@@ -14,24 +14,6 @@ class AdminService {
         SELECT COUNT(*) as pending FROM orders WHERE status = 'Pending'
       `),
       pool.query(`
-<<<<<<< HEAD
-        SELECT COUNT(*) as low_stock
-        FROM (
-          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') AS in_stock_count
-          FROM book_copy
-          GROUP BY book_id
-          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') < 10
-             AND COUNT(*) FILTER (WHERE status = 'in_stock') > 0
-        ) sub
-      `),
-      pool.query(`
-        SELECT COUNT(*) as out_of_stock
-        FROM (
-          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') AS in_stock_count
-          FROM book_copy
-          GROUP BY book_id
-          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') = 0
-=======
         SELECT COUNT(*) as low_stock FROM (
           SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') as stock
           FROM book_copy
@@ -47,7 +29,6 @@ class AdminService {
           LEFT JOIN book_copy bc ON b.id = bc.book_id AND bc.status = 'in_stock'
           GROUP BY b.id
           HAVING COUNT(bc.copy_id) = 0
->>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
         ) sub
       `)
     ];
