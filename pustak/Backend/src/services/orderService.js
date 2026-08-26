@@ -59,7 +59,7 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
     );
 
     // Step 3: validate coupon if provided
-    let couponId      = null;
+    let couponId       = null;
     let discountAmount = 0;
 
     if (couponCode) {
@@ -68,8 +68,8 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
       discountAmount = discount_amount;
     }
 
-    const totalAmount  = Math.max(0, subtotal - discountAmount);
-    const orderNumber  = generateOrderNumber();
+    const totalAmount = Math.max(0, subtotal - discountAmount);
+    const orderNumber = generateOrderNumber();
 
     // Step 4: create the order
     const orderRes = await client.query(
@@ -89,11 +89,7 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
         await client.query(
           `INSERT INTO order_item (order_id, copy_id, price_sold)
            VALUES ($1, $2, $3)`,
-<<<<<<< HEAD
-          [order.order_id, copyId, price]
-=======
           [order.order_id, copyId, r.pricePerUnit]
->>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
         );
         await client.query(
           `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,
@@ -155,11 +151,7 @@ async function listOrders(userId) {
   return res.rows;
 }
 
-// Returns delivery / tracking info for a single order.
-// If no delivery row exists yet, returns null so the frontend can show a
-// "not dispatched yet" state without crashing.
 async function getTrackingInfo(userId, orderId) {
-  // verify ownership first
   const orderRes = await pool.query(
     'SELECT order_id, order_number, status FROM orders WHERE order_id = $1 AND user_id = $2',
     [orderId, userId]
@@ -177,7 +169,7 @@ async function getTrackingInfo(userId, orderId) {
   );
 
   return {
-    order: orderRes.rows[0],
+    order:    orderRes.rows[0],
     delivery: deliveryRes.rows[0] || null,
   };
 }
