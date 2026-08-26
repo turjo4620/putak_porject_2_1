@@ -16,12 +16,12 @@ export default function AdminLayout() {
 
   // If no token, redirect to admin login immediately
   if (!token) {
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const handleLogout = () => {
     signOut();                    // clears all localStorage keys + authUser state
-    navigate('/admin/login', { replace: true });
+    navigate('/login', { replace: true });
   };
 
   const menuItems = [

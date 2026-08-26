@@ -278,7 +278,6 @@ export default function AdminBooks() {
 
 function BookModal({ book, categories, authors, publications, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    id: book?.id || '',
     book_name: book?.book_name || '',
     isbn: book?.isbn || '',
     cover_image_url: book?.cover_image_url || '',
@@ -347,16 +346,12 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
-            <div className="form-group">
-              <label>Book ID *</label>
-              <input
-                type="number"
-                value={formData.id}
-                onChange={(e) => handleChange('id', e.target.value)}
-                disabled={!!book}
-                required
-              />
-            </div>
+            {book && (
+              <div className="form-group">
+                <label>Book ID</label>
+                <input type="number" value={book.id} disabled />
+              </div>
+            )}
 
             <div className="form-group">
               <label>ISBN</label>

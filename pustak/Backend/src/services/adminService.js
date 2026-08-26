@@ -170,13 +170,12 @@ class AdminService {
 
       const bookResult = await client.query(`
         INSERT INTO books (
-          id, book_name, cover_image_url, isbn, language,
+          book_name, cover_image_url, isbn, language,
           num_pages, edition, price, discount_price,
-          availability, description
+          availability, description, initial_stock
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `, [
-        bookData.id,
         bookData.book_name,
         bookData.cover_image_url || null,
         bookData.isbn || null,
@@ -186,7 +185,8 @@ class AdminService {
         bookData.price,
         bookData.discount_price || null,
         bookData.availability || 'In Stock',
-        bookData.description || null
+        bookData.description || null,
+        parseInt(bookData.stock_quantity) || 0  // picked up by trg_create_initial_book_copies
       ]);
       const book = bookResult.rows[0];
 
@@ -216,16 +216,9 @@ class AdminService {
           );
         }
       }
-
-      // Create book_copy rows for stock
-      if (bookData.stock_quantity && bookData.stock_quantity > 0) {
-        for (let i = 0; i < bookData.stock_quantity; i++) {
-          await client.query(
-            `INSERT INTO book_copy (book_id, status, condition) VALUES ($1, 'in_stock', 'new')`,
-            [book.id]
-          );
-        }
-      }
+      // NOTE: book_copy rows are created by trg_create_initial_book_copies (T3).
+      // books.availability is kept in sync by trg_sync_book_availability (T2).
+      // No manual book_copy inserts needed here.
 
       await client.query('COMMIT');
       return book;
