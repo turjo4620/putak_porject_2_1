@@ -26,7 +26,12 @@ export default function LoginPage() {
   // Redirect already-logged-in users away from the login page
   useEffect(() => {
     if (authUser) {
-      navigate('/', { replace: true })
+      const userType = localStorage.getItem('pustak-user-type')
+      if (userType === 'admin') {
+        navigate('/admin/dashboard', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
     }
   }, [authUser, navigate])
 
@@ -67,9 +72,9 @@ export default function LoginPage() {
       setAuthUser(data.user)
       setMessage({ type: 'success', text: data.message })
       
-      // Navigate to appropriate page
+      // Navigate to appropriate page immediately
       const destination = form.userType === 'admin' ? '/admin/dashboard' : '/'
-      setTimeout(() => navigate(destination), 700)
+      navigate(destination, { replace: true })
     } catch (error) {
       const friendlyMessage = error.message.includes('Unexpected token')
         ? 'The authentication service is unavailable. Make sure the backend is running.'

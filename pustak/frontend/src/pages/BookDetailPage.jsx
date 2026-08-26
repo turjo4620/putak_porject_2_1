@@ -227,7 +227,22 @@ export default function BookDetailPage() {
               </p>
             )}
 
-            <button className="book-detail__buy-now-btn" disabled={!inStock}>
+            <button className="book-detail__buy-now-btn" disabled={!inStock}
+              onClick={() => {
+                if (!authUser) { navigate('/login'); return; }
+                navigate('/checkout', {
+                  state: {
+                    buyNow: {
+                      book_id:       book.id,
+                      book_name:     book.book_name,
+                      cover_image_url: book.cover_image_url,
+                      price_sold:    currentPrice,
+                      quantity:      qty,
+                    }
+                  }
+                });
+              }}
+            >
               এখনই কিনুন
             </button>
 

@@ -41,6 +41,7 @@ const orderRoutes = require("./src/routes/orderRoutes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
 const wishlistRoutes = require("./src/routes/wishlistRoutes");
 const couponRoutes = require("./src/routes/couponRoutes");
+const addressRoutes = require("./src/routes/addressRoutes");
 
 // Admin routes
 const adminRoutes = require('./src/routes/adminRoutes');
@@ -50,6 +51,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/addresses", addressRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/authors', authorRoutes);

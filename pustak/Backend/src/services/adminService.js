@@ -465,10 +465,11 @@ class AdminService {
         u.name as user_name,
         u.email as user_email,
         u.phone_number as user_phone,
-        a.street_address,
-        a.city,
-        a.postal_code,
-        a.country
+        a.street,
+        a.area,
+        a.district,
+        a.division,
+        a.postal_code
       FROM orders o
       JOIN users u ON o.user_id = u.user_id
       LEFT JOIN addresses a ON o.address_id = a.address_id
@@ -501,7 +502,7 @@ class AdminService {
 
   async updateOrderStatus(orderId, status) {
     const result = await pool.query(
-      `UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2 RETURNING *`,
+      `UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *`,
       [status, orderId]
     );
     return result.rows[0];

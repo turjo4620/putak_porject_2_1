@@ -6,6 +6,9 @@ const orderController = require('../controllers/orderController');
 
 router.use(requireAuth);
 
+// POST /api/orders/buy-now      -> body: { bookId, quantity, couponCode? } | direct purchase, bypasses cart
+router.post('/buy-now', orderController.buyNow);
+
 // POST /api/orders            -> body: { addressId? } | places order from cart
 router.post('/', orderController.placeOrder);
 

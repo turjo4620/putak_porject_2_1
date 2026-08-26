@@ -74,12 +74,10 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
     // Step 4: create the order
     const orderRes = await client.query(
       `INSERT INTO orders
-         (user_id, address_id, order_number, total_amount,
-          coupon_id, discount_amount, original_amount, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending')
+         (user_id, address_id, order_number, total_amount, coupon_id, status)
+       VALUES ($1, $2, $3, $4, $5, 'Pending')
        RETURNING *`,
-      [userId, addressId || null, orderNumber,
-       totalAmount, couponId, discountAmount, subtotal]
+      [userId, addressId || null, orderNumber, totalAmount, couponId]
     );
     const order = orderRes.rows[0];
 
@@ -98,9 +96,13 @@ async function placeOrderFromCart(userId, addressId, couponCode = null) {
       }
     }
 
-    // Step 6: increment coupon usage counter
+    // Step 6: increment coupon usage counter (best-effort — ignore if column missing)
     if (couponId) {
-      await couponService.incrementUsage(client, couponId);
+      try {
+        await couponService.incrementUsage(client, couponId);
+      } catch (_) {
+        // times_used column may not exist in this DB — non-fatal
+      }
     }
 
     // Step 7: empty the cart
@@ -174,4 +176,88 @@ async function getTrackingInfo(userId, orderId) {
   };
 }
 
-module.exports = { placeOrderFromCart, getOrderById, listOrders, getTrackingInfo };
+async function placeBuyNowOrder(userId, bookId, quantity = 1, addressId = null, couponCode = null) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Lock and reserve the requested number of copies
+    const copiesRes = await client.query(
+      `SELECT copy_id FROM book_copy
+       WHERE book_id = $1 AND status = 'in_stock'
+       ORDER BY copy_id
+       LIMIT $2
+       FOR UPDATE SKIP LOCKED`,
+      [bookId, quantity]
+    );
+
+    if (copiesRes.rows.length < quantity) {
+      throw {
+        status: 409,
+        message: `পর্যাপ্ত স্টক নেই (আছে ${copiesRes.rows.length}, দরকার ${quantity})`,
+      };
+    }
+
+    // Get book price
+    const bookRes = await client.query(
+      'SELECT price, discount_price, book_name FROM books WHERE id = $1',
+      [bookId]
+    );
+    if (!bookRes.rows.length) {
+      throw { status: 404, message: 'বই খুঁজে পাওয়া যায়নি' };
+    }
+    const book = bookRes.rows[0];
+    const pricePerUnit = book.discount_price ?? book.price;
+
+    // Calculate totals
+    const subtotal = Number(pricePerUnit) * quantity;
+
+    let couponId       = null;
+    let discountAmount = 0;
+    if (couponCode) {
+      const { coupon, discount_amount } = await couponService.validateCoupon(couponCode, subtotal);
+      couponId       = coupon.coupon_id;
+      discountAmount = discount_amount;
+    }
+
+    const totalAmount = Math.max(0, subtotal - discountAmount);
+    const orderNumber = generateOrderNumber();
+
+    // Create order
+    const orderRes = await client.query(
+      `INSERT INTO orders
+         (user_id, address_id, order_number, total_amount, coupon_id, status)
+       VALUES ($1, $2, $3, $4, $5, 'Pending')
+       RETURNING *`,
+      [userId, addressId || null, orderNumber, totalAmount, couponId]
+    );
+    const order = orderRes.rows[0];
+
+    // Insert one order_item per physical copy, mark each sold
+    for (const row of copiesRes.rows) {
+      await client.query(
+        `INSERT INTO order_item (order_id, copy_id, price_sold) VALUES ($1, $2, $3)`,
+        [order.order_id, row.copy_id, pricePerUnit]
+      );
+      await client.query(
+        `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,
+        [row.copy_id]
+      );
+    }
+
+    // Best-effort coupon usage increment
+    if (couponId) {
+      try { await couponService.incrementUsage(client, couponId); } catch (_) {}
+    }
+
+    await client.query('COMMIT');
+    return order;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { placeOrderFromCart, placeBuyNowOrder, getOrderById, listOrders, getTrackingInfo };

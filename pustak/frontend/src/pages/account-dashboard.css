@@ -52,11 +52,34 @@
 }
 
 /* Sidebar Styling */
+.account-sidebar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 5rem;
+}
+
 .sidebar-profile-header {
   text-align: center;
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid #eaeaea;
+}
+
+.sidebar-profile-info h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 2px;
+}
+
+.sidebar-profile-info p {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  word-break: break-all;
 }
 
 .avatar-circle {
@@ -78,18 +101,22 @@
   gap: 0.5rem;
 }
 
-.nav-item {
+.account-sidebar .sidebar-nav .nav-item {
   padding: 0.75rem 1rem;
   border-radius: 6px;
   text-decoration: none;
-  color: #4b5563;
+  color: #374151 !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: block;
   transition: all 0.2s;
 }
 
-.nav-item:hover, .nav-item.active {
-  background-color: #f0fdf4;
-  color: #166534;
-  font-weight: 500;
+.account-sidebar .sidebar-nav .nav-item:hover,
+.account-sidebar .sidebar-nav .nav-item.active {
+  background-color: #f0fdf4 !important;
+  color: #166534 !important;
+  font-weight: 600;
 }
 
 /* Profile Form */
@@ -182,9 +209,19 @@
   padding: 0.5rem 1rem;
   border: 1px solid #e5e7eb;
   background: white;
+  color: #374151;
   border-radius: 4px;
   cursor: pointer;
   width: 100%;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sign-out-btn:hover {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
 }
 
 /* Tabs */
