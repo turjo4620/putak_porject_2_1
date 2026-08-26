@@ -14,6 +14,7 @@ class AdminService {
         SELECT COUNT(*) as pending FROM orders WHERE status = 'Pending'
       `),
       pool.query(`
+<<<<<<< HEAD
         SELECT COUNT(*) as low_stock
         FROM (
           SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') AS in_stock_count
@@ -30,6 +31,23 @@ class AdminService {
           FROM book_copy
           GROUP BY book_id
           HAVING COUNT(*) FILTER (WHERE status = 'in_stock') = 0
+=======
+        SELECT COUNT(*) as low_stock FROM (
+          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') as stock
+          FROM book_copy
+          GROUP BY book_id
+          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') < 10
+            AND COUNT(*) FILTER (WHERE status = 'in_stock') > 0
+        ) sub
+      `),
+      pool.query(`
+        SELECT COUNT(*) as out_of_stock FROM (
+          SELECT b.id
+          FROM books b
+          LEFT JOIN book_copy bc ON b.id = bc.book_id AND bc.status = 'in_stock'
+          GROUP BY b.id
+          HAVING COUNT(bc.copy_id) = 0
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
         ) sub
       `)
     ];
@@ -204,26 +222,30 @@ class AdminService {
     try {
       await client.query('BEGIN');
 
-      // Insert book
+      // Single INSERT — triggers fire automatically:
+      //   trg_calc_discount_percentage  → sets discount_percentage
+      //   trg_create_initial_book_copies → creates book_copy rows from initial_stock
+      //   trg_sync_book_availability     → sets availability based on stock count
       const bookResult = await client.query(`
         INSERT INTO books (
-          id, book_name, cover_image_url, isbn, language, 
-          num_pages, edition, price, discount_price, 
-          availability, description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          id, book_name, cover_image_url, isbn, language,
+          num_pages, edition, price, discount_price,
+          availability, description, initial_stock
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         bookData.id,
         bookData.book_name,
-        bookData.cover_image_url,
-        bookData.isbn,
-        bookData.language,
-        bookData.num_pages,
-        bookData.edition,
+        bookData.cover_image_url || null,
+        bookData.isbn || null,
+        bookData.language || 'Bengali',
+        bookData.num_pages || null,
+        bookData.edition || null,
         bookData.price,
-        bookData.discount_price,
+        bookData.discount_price || null,
         bookData.availability || 'In Stock',
-        bookData.description
+        bookData.description || null,
+        bookData.stock_quantity || 0   // picked up by trg_create_initial_book_copies
       ]);
 
       const book = bookResult.rows[0];
@@ -258,6 +280,7 @@ class AdminService {
         }
       }
 
+<<<<<<< HEAD
       // Create book copies for stock — one row per unit with status 'in_stock'
       if (bookData.stock_quantity && bookData.stock_quantity > 0) {
         for (let i = 0; i < bookData.stock_quantity; i++) {
@@ -268,6 +291,8 @@ class AdminService {
         }
       }
 
+=======
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
       await client.query('COMMIT');
       return book;
     } catch (error) {
@@ -283,7 +308,9 @@ class AdminService {
     try {
       await client.query('BEGIN');
 
-      // Update book
+      // Build dynamic SET clause for allowed fields.
+      // trg_calc_discount_percentage fires automatically when
+      // price or discount_price changes.
       const updateFields = [];
       const updateValues = [];
       let paramIndex = 1;
@@ -304,13 +331,12 @@ class AdminService {
 
       if (updateFields.length > 0) {
         updateValues.push(bookId);
-        const updateQuery = `
-          UPDATE books 
+        await client.query(`
+          UPDATE books
           SET ${updateFields.join(', ')}
           WHERE id = $${paramIndex}
           RETURNING *
-        `;
-        await client.query(updateQuery, updateValues);
+        `, updateValues);
       }
 
       // Update authors if provided
@@ -346,6 +372,12 @@ class AdminService {
         }
       }
 
+      // Update stock quantity if provided — trg_sync_book_availability
+      // fires automatically on each book_copy change.
+      if (bookData.stock_quantity !== undefined) {
+        await this.updateBookStock(bookId, parseInt(bookData.stock_quantity));
+      }
+
       await client.query('COMMIT');
       return await this.getBookById(bookId);
     } catch (error) {
@@ -361,6 +393,7 @@ class AdminService {
   }
 
   async updateBookStock(bookId, quantity) {
+<<<<<<< HEAD
     // Get current in_stock count
     const currentRes = await pool.query(
       `SELECT COUNT(*) as current FROM book_copy WHERE book_id = $1 AND status = 'in_stock'`,
@@ -390,6 +423,50 @@ class AdminService {
     }
 
     return { book_id: bookId, in_stock: quantity };
+=======
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Get current in_stock count
+      const currentRes = await client.query(
+        `SELECT COUNT(*)::int as current FROM book_copy WHERE book_id = $1 AND status = 'in_stock'`,
+        [bookId]
+      );
+      const current = currentRes.rows[0].current;
+
+      if (quantity > current) {
+        // Add new rows
+        for (let i = 0; i < quantity - current; i++) {
+          await client.query(
+            `INSERT INTO book_copy (book_id, status, condition) VALUES ($1, 'in_stock', 'new')`,
+            [bookId]
+          );
+        }
+      } else if (quantity < current) {
+        // Mark excess rows as unavailable
+        await client.query(
+          `UPDATE book_copy SET status = 'unavailable'
+           WHERE copy_id IN (
+             SELECT copy_id FROM book_copy
+             WHERE book_id = $1 AND status = 'in_stock'
+             ORDER BY copy_id DESC
+             LIMIT $2
+           )`,
+          [bookId, current - quantity]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      return { book_id: bookId, available_stock: quantity };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
   }
 
   // ============= USER MANAGEMENT =============
@@ -551,7 +628,12 @@ class AdminService {
       SELECT 
         oi.*,
         b.book_name,
+<<<<<<< HEAD
         b.cover_image_url
+=======
+        b.cover_image_url,
+        b.isbn
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
       FROM order_item oi
       JOIN book_copy bc ON oi.copy_id = bc.copy_id
       JOIN books b ON bc.book_id = b.id
@@ -739,9 +821,15 @@ class AdminService {
         b.book_name,
         b.cover_image_url
       FROM books b
+<<<<<<< HEAD
       LEFT JOIN book_copy bc ON b.id = bc.book_id
       GROUP BY b.id, b.book_name, b.cover_image_url
       HAVING COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') = 0
+=======
+      LEFT JOIN book_copy bc ON b.id = bc.book_id AND bc.status = 'in_stock'
+      GROUP BY b.id, b.book_name, b.cover_image_url
+      HAVING COUNT(bc.copy_id) = 0
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
       ORDER BY b.book_name
     `);
 

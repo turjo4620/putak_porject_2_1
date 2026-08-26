@@ -139,8 +139,8 @@ export function AppProvider({ children }) {
   const totalCartPrice = cartTotal
 
   // Places an order from the current cart. Returns the created order row.
-  const placeOrder = async (addressId) => {
-    const order = await api.post('/orders', { addressId })
+  const placeOrder = async (addressId, couponCode = null) => {
+    const order = await api.post('/orders', { addressId, couponCode })
     setCartItems([])
     return order
   }

@@ -3,8 +3,8 @@ const orderService = require('../services/orderService');
 
 async function placeOrder(req, res, next) {
   try {
-    const { addressId } = req.body; // optional for now (address_id is nullable)
-    const order = await orderService.placeOrderFromCart(req.userId, addressId);
+    const { addressId, couponCode } = req.body;
+    const order = await orderService.placeOrderFromCart(req.userId, addressId, couponCode || null);
     res.status(201).json(order);
   } catch (err) {
     next(err);

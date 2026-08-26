@@ -65,6 +65,7 @@ export default function AdminBooks() {
         })
       ]);
 
+<<<<<<< HEAD
       const [categoriesData, authorsData, publicationsData] = await Promise.all([
         categoriesRes.json(),
         authorsRes.json(),
@@ -74,6 +75,15 @@ export default function AdminBooks() {
       setCategories(Array.isArray(categoriesData) ? categoriesData : (categoriesData.data || []));
       setAuthors(Array.isArray(authorsData) ? authorsData : (authorsData.data || []));
       setPublications(Array.isArray(publicationsData) ? publicationsData : (publicationsData.data || []));
+=======
+      const authorsData = await authorsRes.json();
+      const publicationsData = await publicationsRes.json();
+      const categoriesData = await categoriesRes.json();
+
+      setCategories(categoriesData.data || (Array.isArray(categoriesData) ? categoriesData : []));
+      setAuthors(authorsData.data || (Array.isArray(authorsData) ? authorsData : []));
+      setPublications(publicationsData.data || (Array.isArray(publicationsData) ? publicationsData : []));
+>>>>>>> 352db0990f5e791bc4613a95e15a1780e59ea81f
     } catch (error) {
       console.error('Error fetching metadata:', error);
     }
@@ -435,6 +445,7 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
                 step="0.01"
                 value={formData.discount_price}
                 onChange={(e) => handleChange('discount_price', e.target.value)}
+                placeholder="Auto-calculates % off"
               />
             </div>
 
@@ -442,6 +453,7 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
               <label>Stock Quantity</label>
               <input
                 type="number"
+                min="0"
                 value={formData.stock_quantity}
                 onChange={(e) => handleChange('stock_quantity', e.target.value)}
               />
@@ -449,14 +461,14 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
           </div>
 
           <div className="form-group">
-            <label>Availability</label>
+            <label>Availability <small style={{color:'#888'}}>(auto-set by stock; override only for Pre-Order)</small></label>
             <select
               value={formData.availability}
               onChange={(e) => handleChange('availability', e.target.value)}
             >
               <option value="In Stock">In Stock</option>
               <option value="Out of Stock">Out of Stock</option>
-              <option value="Pre-order">Pre-order</option>
+              <option value="Pre-Order">Pre-Order</option>
             </select>
           </div>
 
