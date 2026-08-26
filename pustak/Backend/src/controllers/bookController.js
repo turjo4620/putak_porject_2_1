@@ -385,7 +385,7 @@ const getBestsellers = async (req, res) => {
         COUNT(oi.order_item_id) AS sales_count
       FROM books b
       LEFT JOIN book_copy bc ON b.id = bc.book_id
-      LEFT JOIN order_items oi ON bc.copy_id = oi.copy_id
+      LEFT JOIN order_item oi ON bc.copy_id = oi.copy_id
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
       GROUP BY b.id, b.book_name, b.cover_image_url, b.price, b.discount_price, b.discount_percentage

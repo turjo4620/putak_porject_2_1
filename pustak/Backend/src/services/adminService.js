@@ -14,11 +14,22 @@ class AdminService {
         SELECT COUNT(*) as pending FROM orders WHERE status = 'Pending'
       `),
       pool.query(`
-        SELECT COUNT(*) as low_stock FROM book_copies 
-        WHERE available_stock < 10 AND available_stock > 0
+        SELECT COUNT(*) as low_stock FROM (
+          SELECT book_id, COUNT(*) FILTER (WHERE status = 'in_stock') as stock
+          FROM book_copy
+          GROUP BY book_id
+          HAVING COUNT(*) FILTER (WHERE status = 'in_stock') < 10
+            AND COUNT(*) FILTER (WHERE status = 'in_stock') > 0
+        ) sub
       `),
       pool.query(`
-        SELECT COUNT(*) as out_of_stock FROM book_copies WHERE available_stock = 0
+        SELECT COUNT(*) as out_of_stock FROM (
+          SELECT b.id
+          FROM books b
+          LEFT JOIN book_copy bc ON b.id = bc.book_id AND bc.status = 'in_stock'
+          GROUP BY b.id
+          HAVING COUNT(bc.copy_id) = 0
+        ) sub
       `)
     ];
 
@@ -103,13 +114,13 @@ class AdminService {
           ) FILTER (WHERE c.category_id IS NOT NULL),
           '[]'
         ) as categories,
-        COALESCE(SUM(cop.available_stock), 0) as total_stock
+        COUNT(cop.copy_id) FILTER (WHERE cop.status = 'in_stock') as total_stock
       FROM books b
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
       LEFT JOIN book_category bc ON b.id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
-      LEFT JOIN book_copies cop ON b.id = cop.book_id
+      LEFT JOIN book_copy cop ON b.id = cop.book_id
       ${whereClause}
       GROUP BY b.id
       ORDER BY b.id DESC
@@ -171,7 +182,7 @@ class AdminService {
           ) FILTER (WHERE c.category_id IS NOT NULL),
           '[]'
         ) as categories,
-        COALESCE(SUM(cop.available_stock), 0) as total_stock
+        COUNT(cop.copy_id) FILTER (WHERE cop.status = 'in_stock') as total_stock
       FROM books b
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
@@ -179,7 +190,7 @@ class AdminService {
       LEFT JOIN publications p ON bpc.publication_id = p.publication_id
       LEFT JOIN book_category bc ON b.id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
-      LEFT JOIN book_copies cop ON b.id = cop.book_id
+      LEFT JOIN book_copy cop ON b.id = cop.book_id
       WHERE b.id = $1
       GROUP BY b.id
     `, [bookId]);
@@ -192,26 +203,30 @@ class AdminService {
     try {
       await client.query('BEGIN');
 
-      // Insert book
+      // Single INSERT — triggers fire automatically:
+      //   trg_calc_discount_percentage  → sets discount_percentage
+      //   trg_create_initial_book_copies → creates book_copy rows from initial_stock
+      //   trg_sync_book_availability     → sets availability based on stock count
       const bookResult = await client.query(`
         INSERT INTO books (
-          id, book_name, cover_image_url, isbn, language, 
-          num_pages, edition, price, discount_price, 
-          availability, description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          id, book_name, cover_image_url, isbn, language,
+          num_pages, edition, price, discount_price,
+          availability, description, initial_stock
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         bookData.id,
         bookData.book_name,
-        bookData.cover_image_url,
-        bookData.isbn,
-        bookData.language,
-        bookData.num_pages,
-        bookData.edition,
+        bookData.cover_image_url || null,
+        bookData.isbn || null,
+        bookData.language || 'Bengali',
+        bookData.num_pages || null,
+        bookData.edition || null,
         bookData.price,
-        bookData.discount_price,
+        bookData.discount_price || null,
         bookData.availability || 'In Stock',
-        bookData.description
+        bookData.description || null,
+        bookData.stock_quantity || 0   // picked up by trg_create_initial_book_copies
       ]);
 
       const book = bookResult.rows[0];
@@ -246,14 +261,6 @@ class AdminService {
         }
       }
 
-      // Create book copies for stock
-      if (bookData.stock_quantity && bookData.stock_quantity > 0) {
-        await client.query(`
-          INSERT INTO book_copies (book_id, available_stock, condition)
-          VALUES ($1, $2, $3)
-        `, [book.id, bookData.stock_quantity, 'New']);
-      }
-
       await client.query('COMMIT');
       return book;
     } catch (error) {
@@ -269,7 +276,9 @@ class AdminService {
     try {
       await client.query('BEGIN');
 
-      // Update book
+      // Build dynamic SET clause for allowed fields.
+      // trg_calc_discount_percentage fires automatically when
+      // price or discount_price changes.
       const updateFields = [];
       const updateValues = [];
       let paramIndex = 1;
@@ -290,13 +299,12 @@ class AdminService {
 
       if (updateFields.length > 0) {
         updateValues.push(bookId);
-        const updateQuery = `
-          UPDATE books 
+        await client.query(`
+          UPDATE books
           SET ${updateFields.join(', ')}
           WHERE id = $${paramIndex}
           RETURNING *
-        `;
-        await client.query(updateQuery, updateValues);
+        `, updateValues);
       }
 
       // Update authors if provided
@@ -332,6 +340,12 @@ class AdminService {
         }
       }
 
+      // Update stock quantity if provided — trg_sync_book_availability
+      // fires automatically on each book_copy change.
+      if (bookData.stock_quantity !== undefined) {
+        await this.updateBookStock(bookId, parseInt(bookData.stock_quantity));
+      }
+
       await client.query('COMMIT');
       return await this.getBookById(bookId);
     } catch (error) {
@@ -347,22 +361,48 @@ class AdminService {
   }
 
   async updateBookStock(bookId, quantity) {
-    const result = await pool.query(`
-      UPDATE book_copies 
-      SET available_stock = $1 
-      WHERE book_id = $2
-      RETURNING *
-    `, [quantity, bookId]);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (result.rows.length === 0) {
-      // Create new stock entry if doesn't exist
-      await pool.query(`
-        INSERT INTO book_copies (book_id, available_stock, condition)
-        VALUES ($1, $2, 'New')
-      `, [bookId, quantity]);
+      // Get current in_stock count
+      const currentRes = await client.query(
+        `SELECT COUNT(*)::int as current FROM book_copy WHERE book_id = $1 AND status = 'in_stock'`,
+        [bookId]
+      );
+      const current = currentRes.rows[0].current;
+
+      if (quantity > current) {
+        // Add new rows
+        for (let i = 0; i < quantity - current; i++) {
+          await client.query(
+            `INSERT INTO book_copy (book_id, status, condition) VALUES ($1, 'in_stock', 'new')`,
+            [bookId]
+          );
+        }
+      } else if (quantity < current) {
+        // Mark excess rows as unavailable
+        await client.query(
+          `UPDATE book_copy SET status = 'unavailable'
+           WHERE copy_id IN (
+             SELECT copy_id FROM book_copy
+             WHERE book_id = $1 AND status = 'in_stock'
+             ORDER BY copy_id DESC
+             LIMIT $2
+           )`,
+          [bookId, current - quantity]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      return { book_id: bookId, available_stock: quantity };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    return result.rows[0];
   }
 
   // ============= USER MANAGEMENT =============
@@ -469,7 +509,7 @@ class AdminService {
         o.*,
         u.name as user_name,
         u.email as user_email,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+        (SELECT COUNT(*) FROM order_item WHERE order_id = o.order_id) as item_count
       FROM orders o
       JOIN users u ON o.user_id = u.user_id
       WHERE ${whereClause}
@@ -525,9 +565,9 @@ class AdminService {
         oi.*,
         b.book_name,
         b.cover_image_url,
-        bc.isbn
-      FROM order_items oi
-      JOIN book_copies bc ON oi.copy_id = bc.copy_id
+        b.isbn
+      FROM order_item oi
+      JOIN book_copy bc ON oi.copy_id = bc.copy_id
       JOIN books b ON bc.book_id = b.id
       WHERE oi.order_id = $1
     `, [orderId]);
@@ -654,11 +694,11 @@ class AdminService {
         b.cover_image_url,
         b.price,
         COUNT(oi.order_item_id) as order_count,
-        SUM(oi.quantity) as total_sold,
-        SUM(oi.unit_price * oi.quantity) as revenue
+        COUNT(oi.order_item_id) as total_sold,
+        SUM(oi.price_sold) as revenue
       FROM books b
-      JOIN book_copies bc ON b.id = bc.book_id
-      JOIN order_items oi ON bc.copy_id = oi.copy_id
+      JOIN book_copy bc ON b.id = bc.book_id
+      JOIN order_item oi ON bc.copy_id = oi.copy_id
       JOIN orders o ON oi.order_id = o.order_id
       WHERE o.status NOT IN ('Cancelled', 'Returned')
       GROUP BY b.id, b.book_name, b.cover_image_url, b.price
@@ -678,8 +718,8 @@ class AdminService {
         COUNT(oi.order_item_id) as order_count
       FROM categories c
       LEFT JOIN book_category bc ON c.category_id = bc.category_id
-      LEFT JOIN book_copies cop ON bc.book_id = cop.book_id
-      LEFT JOIN order_items oi ON cop.copy_id = oi.copy_id
+      LEFT JOIN book_copy cop ON bc.book_id = cop.book_id
+      LEFT JOIN order_item oi ON cop.copy_id = oi.copy_id
       GROUP BY c.category_id, c.category_name
       ORDER BY order_count DESC
       LIMIT 10
@@ -694,11 +734,12 @@ class AdminService {
         b.id,
         b.book_name,
         b.cover_image_url,
-        SUM(bc.available_stock) as total_stock
+        COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') as total_stock
       FROM books b
-      JOIN book_copies bc ON b.id = bc.book_id
+      JOIN book_copy bc ON b.id = bc.book_id
       GROUP BY b.id, b.book_name, b.cover_image_url
-      HAVING SUM(bc.available_stock) < 10 AND SUM(bc.available_stock) > 0
+      HAVING COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') < 10
+         AND COUNT(bc.copy_id) FILTER (WHERE bc.status = 'in_stock') > 0
       ORDER BY total_stock ASC
     `);
 
@@ -712,9 +753,9 @@ class AdminService {
         b.book_name,
         b.cover_image_url
       FROM books b
-      LEFT JOIN book_copies bc ON b.id = bc.book_id
+      LEFT JOIN book_copy bc ON b.id = bc.book_id AND bc.status = 'in_stock'
       GROUP BY b.id, b.book_name, b.cover_image_url
-      HAVING COALESCE(SUM(bc.available_stock), 0) = 0
+      HAVING COUNT(bc.copy_id) = 0
       ORDER BY b.book_name
     `);
 

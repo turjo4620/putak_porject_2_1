@@ -57,6 +57,8 @@ INSERT INTO users (user_id, name, email, phone_number, password_hash, role, stat
 (1786233978, 'Tariq Alam', 'tariq.alam30@example.com', '01799141000', '$2b$12$JFS9YlxwN4zA.pGuFnpR1OKEGwclLdsy05er9ehowgIcI/x67HHsC', 'customer', 'Active', '2026-02-05 01:50:15.816107'),
 (1786484073, 'Turjo Sarker', 'sarkerturjo2022@gmail.com', NULL, '$2b$12$XFEGuaoM.zLVk2tZTbYaieos9mCf5dEMPekrFba0HmlEu3lC/3FCa', 'admin', 'Active', '2026-08-25 11:41:04.920086');
 
+drop table returns
+
 INSERT INTO customer (user_id, newsletter_opt_in) VALUES
 (1786230010, FALSE),
 (1786230142, FALSE),

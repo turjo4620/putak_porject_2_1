@@ -11,12 +11,13 @@
 
 const pool = require('../config/db');
 const cartService = require('./cartService');
+const couponService = require('./couponService');
 
 function generateOrderNumber() {
   return 'PB' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000);
 }
 
-async function placeOrderFromCart(userId, addressId) {
+async function placeOrderFromCart(userId, addressId, couponCode = null) {
   const { cart, items } = await cartService.getCartWithItems(userId);
   if (!items.length) {
     throw { status: 400, message: 'কার্ট খালি, অর্ডার দেওয়া যাবে না' };
@@ -26,10 +27,7 @@ async function placeOrderFromCart(userId, addressId) {
   try {
     await client.query('BEGIN');
 
-    // Step 1: for every cart line, lock and reserve that many physical
-    // copies. FOR UPDATE SKIP LOCKED means two concurrent checkouts can't
-    // grab the same copy. If any book is short on stock, the whole order
-    // fails (nothing is partially reserved).
+    // Step 1: lock and reserve physical copies for every cart line
     const reservations = [];
     for (const it of items) {
       const copiesRes = await client.query(
@@ -48,38 +46,50 @@ async function placeOrderFromCart(userId, addressId) {
         };
       }
 
-      // Use current price from book (discount_price if available, otherwise regular price)
-      const pricePerUnit = it.discount_price ?? it.price;
-      
       reservations.push({
-        copyIds: copiesRes.rows.map((r) => r.copy_id),
-        pricePerUnit: pricePerUnit,
+        copyIds:      copiesRes.rows.map((r) => r.copy_id),
+        pricePerUnit: it.discount_price ?? it.price,
       });
     }
 
-    // Step 2: create the order
-    const totalAmount = items.reduce(
+    // Step 2: calculate totals
+    const subtotal = items.reduce(
       (sum, it) => sum + Number(it.discount_price ?? it.price) * it.quantity,
       0
     );
-    const orderNumber = generateOrderNumber();
 
+    // Step 3: validate coupon if provided
+    let couponId      = null;
+    let discountAmount = 0;
+
+    if (couponCode) {
+      const { coupon, discount_amount } = await couponService.validateCoupon(couponCode, subtotal);
+      couponId       = coupon.coupon_id;
+      discountAmount = discount_amount;
+    }
+
+    const totalAmount  = Math.max(0, subtotal - discountAmount);
+    const orderNumber  = generateOrderNumber();
+
+    // Step 4: create the order
     const orderRes = await client.query(
-      `INSERT INTO orders (user_id, address_id, order_number, total_amount, status)
-       VALUES ($1, $2, $3, $4, 'Pending')
+      `INSERT INTO orders
+         (user_id, address_id, order_number, total_amount,
+          coupon_id, discount_amount, original_amount, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending')
        RETURNING *`,
-      [userId, addressId || null, orderNumber, totalAmount]
+      [userId, addressId || null, orderNumber,
+       totalAmount, couponId, discountAmount, subtotal]
     );
     const order = orderRes.rows[0];
 
-    // Step 3: one order_item per physical copy, mark each copy sold
+    // Step 5: one order_item per physical copy, mark each copy sold
     for (const r of reservations) {
       for (const copyId of r.copyIds) {
-        const price = r.pricePerUnit;
         await client.query(
-          `INSERT INTO order_items (order_id, copy_id, unit_price, subtotal)
-           VALUES ($1, $2, $3, $4)`,
-          [order.order_id, copyId, price, price]
+          `INSERT INTO order_item (order_id, copy_id, price_sold)
+           VALUES ($1, $2, $3)`,
+          [order.order_id, copyId, r.pricePerUnit]
         );
         await client.query(
           `UPDATE book_copy SET status = 'sold' WHERE copy_id = $1`,
@@ -88,7 +98,12 @@ async function placeOrderFromCart(userId, addressId) {
       }
     }
 
-    // Step 4: empty the cart
+    // Step 6: increment coupon usage counter
+    if (couponId) {
+      await couponService.incrementUsage(client, couponId);
+    }
+
+    // Step 7: empty the cart
     await client.query('DELETE FROM cart_item WHERE cart_id = $1', [cart.cart_id]);
 
     await client.query('COMMIT');
@@ -114,8 +129,8 @@ async function getOrderById(userId, orderId) {
     `SELECT b.id AS book_id, b.book_name, b.cover_image_url,
             MIN(a.name) AS author,
             COUNT(*)::int AS quantity,
-            SUM(oi.subtotal)::numeric(10,2) AS line_total
-     FROM order_items oi
+            SUM(oi.price_sold)::numeric(10,2) AS line_total
+     FROM order_item oi
      JOIN book_copy bc ON bc.copy_id = oi.copy_id
      JOIN books b ON b.id = bc.book_id
      LEFT JOIN book_author ba ON b.id = ba.book_id

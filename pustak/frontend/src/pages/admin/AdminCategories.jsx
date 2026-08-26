@@ -28,7 +28,7 @@ export default function AdminCategories() {
       if (!response.ok) throw new Error('Failed to fetch categories');
 
       const data = await response.json();
-      setCategories(Array.isArray(data) ? data : []);
+      setCategories(data.data || (Array.isArray(data) ? data : []));
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);

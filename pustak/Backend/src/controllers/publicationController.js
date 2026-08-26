@@ -4,7 +4,7 @@ const getPublications = async (req, res) => {
   try {
     const { search } = req.query;
     const publications = await publicationService.getAllPublications(search);
-    res.status(200).json(publications);
+    res.status(200).json({ success: true, data: publications });
   } catch (error) {
     console.error('Error fetching publications:', error.message);
     res.status(500).json({ success: false, message: 'Server Error' });

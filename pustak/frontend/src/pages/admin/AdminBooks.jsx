@@ -65,9 +65,13 @@ export default function AdminBooks() {
         })
       ]);
 
-      setCategories(await categoriesRes.json());
-      setAuthors(await authorsRes.json());
-      setPublications(await publicationsRes.json());
+      const authorsData = await authorsRes.json();
+      const publicationsData = await publicationsRes.json();
+      const categoriesData = await categoriesRes.json();
+
+      setCategories(categoriesData.data || (Array.isArray(categoriesData) ? categoriesData : []));
+      setAuthors(authorsData.data || (Array.isArray(authorsData) ? authorsData : []));
+      setPublications(publicationsData.data || (Array.isArray(publicationsData) ? publicationsData : []));
     } catch (error) {
       console.error('Error fetching metadata:', error);
     }
@@ -429,6 +433,7 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
                 step="0.01"
                 value={formData.discount_price}
                 onChange={(e) => handleChange('discount_price', e.target.value)}
+                placeholder="Auto-calculates % off"
               />
             </div>
 
@@ -436,6 +441,7 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
               <label>Stock Quantity</label>
               <input
                 type="number"
+                min="0"
                 value={formData.stock_quantity}
                 onChange={(e) => handleChange('stock_quantity', e.target.value)}
               />
@@ -443,14 +449,14 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
           </div>
 
           <div className="form-group">
-            <label>Availability</label>
+            <label>Availability <small style={{color:'#888'}}>(auto-set by stock; override only for Pre-Order)</small></label>
             <select
               value={formData.availability}
               onChange={(e) => handleChange('availability', e.target.value)}
             >
               <option value="In Stock">In Stock</option>
               <option value="Out of Stock">Out of Stock</option>
-              <option value="Pre-order">Pre-order</option>
+              <option value="Pre-Order">Pre-Order</option>
             </select>
           </div>
 

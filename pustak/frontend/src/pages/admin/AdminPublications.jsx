@@ -28,7 +28,7 @@ export default function AdminPublications() {
       if (!response.ok) throw new Error('Failed to fetch publications');
 
       const data = await response.json();
-      setPublications(Array.isArray(data) ? data : []);
+      setPublications(data.data || (Array.isArray(data) ? data : []));
     } catch (error) {
       console.error('Error fetching publications:', error);
       setPublications([]);
