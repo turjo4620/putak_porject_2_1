@@ -7,9 +7,9 @@ const getAllPublications = async (searchTerm = '') => {
       publications.title,
       publications.bio,
       publications.cover_image_url,
-      COUNT(book_publication_create.book_id) AS book_count
+      COUNT(books_count.id) AS book_count
     FROM publications
-    LEFT JOIN book_publication_create ON publications.publication_id = book_publication_create.publication_id
+    LEFT JOIN books books_count ON publications.publication_id = books_count.publication_id
   `;
 
   const params = [];

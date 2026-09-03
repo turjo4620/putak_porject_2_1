@@ -61,7 +61,7 @@ export default function BookDetailPage() {
 
   // Real Database Column Mappings
   const category = book.category_name || book.raw_category || 'সাধারণ'
-  const publisher = book.publisher || 'অজ্ঞাত প্রকাশক'
+  const publisher = book.publications?.[0]?.title || book.publisher || 'অজ্ঞাত প্রকাশক'
   const rating = book.rating ? Number(book.rating) : 0
   const reviews = book.num_reviews || 0
   const language = book.language || 'বাংলা'

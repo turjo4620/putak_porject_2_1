@@ -152,8 +152,7 @@ class AdminService {
       FROM books b
       LEFT JOIN book_author ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.author_id
-      LEFT JOIN book_publication_create bpc ON b.id = bpc.book_id
-      LEFT JOIN publications p ON bpc.publication_id = p.publication_id
+      LEFT JOIN publications p ON b.publication_id = p.publication_id
       LEFT JOIN book_category bc ON b.id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
       LEFT JOIN book_copy cop ON b.id = cop.book_id
@@ -199,13 +198,12 @@ class AdminService {
         }
       }
 
+      // publication_id is now a direct FK on books — update it directly
       if (bookData.publication_ids && bookData.publication_ids.length > 0) {
-        for (const publicationId of bookData.publication_ids) {
-          await client.query(
-            'INSERT INTO book_publication_create (book_id, publication_id) VALUES ($1, $2)',
-            [book.id, publicationId]
-          );
-        }
+        await client.query(
+          'UPDATE books SET publication_id = $1 WHERE id = $2',
+          [bookData.publication_ids[0], book.id]
+        );
       }
 
       if (bookData.category_ids && bookData.category_ids.length > 0) {
@@ -270,10 +268,11 @@ class AdminService {
       }
 
       if (bookData.publication_ids) {
-        await client.query('DELETE FROM book_publication_create WHERE book_id = $1', [bookId]);
-        for (const publicationId of bookData.publication_ids) {
-          await client.query('INSERT INTO book_publication_create (book_id, publication_id) VALUES ($1, $2)', [bookId, publicationId]);
-        }
+        // publication_id is now a direct FK — just update the column
+        await client.query(
+          'UPDATE books SET publication_id = $1 WHERE id = $2',
+          [bookData.publication_ids[0] || null, bookId]
+        );
       }
 
       if (bookData.category_ids) {

@@ -197,10 +197,9 @@ const getBooksByPublication = async (req, res) => {
         books.discount_percentage,
         MIN(authors.name) AS author
       FROM books
-      JOIN book_publication_create ON books.id = book_publication_create.book_id
       LEFT JOIN book_author ON books.id = book_author.book_id
       LEFT JOIN authors ON book_author.author_id = authors.author_id
-      WHERE book_publication_create.publication_id = $1
+      WHERE books.publication_id = $1
       GROUP BY books.id
       ORDER BY 
         CASE 
@@ -217,7 +216,7 @@ const getBooksByPublication = async (req, res) => {
     `;
 
     const { rows } = await pool.query(bookQuery, [publicationId, limit, offset]);
-    const countQuery = `SELECT COUNT(*) FROM book_publication_create WHERE publication_id = $1`;
+    const countQuery = `SELECT COUNT(*) FROM books WHERE publication_id = $1`;
     const countResult = await pool.query(countQuery, [publicationId]);
     const totalBooks = parseInt(countResult.rows[0].count);
 
@@ -336,8 +335,9 @@ const getBookById = async (req, res) => {
     const publicationsQuery = `
       SELECT publications.publication_id, publications.title, publications.cover_image_url
       FROM publications
-      JOIN book_publication_create ON publications.publication_id = book_publication_create.publication_id
-      WHERE book_publication_create.book_id = $1
+      WHERE publications.publication_id = (
+        SELECT publication_id FROM books WHERE id = $1
+      )
     `;
     const publicationsResult = await pool.query(publicationsQuery, [bookId]);
 
