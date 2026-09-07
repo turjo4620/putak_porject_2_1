@@ -90,6 +90,7 @@ class AdminService {
     const query = `
       SELECT 
         b.*,
+        ROUND(b.price * (1 - b.discount_percentage / 100.0), 2) AS discount_price,
         COALESCE(
           json_agg(DISTINCT jsonb_build_object('author_id', a.author_id, 'name', a.name))
           FILTER (WHERE a.author_id IS NOT NULL), '[]'
@@ -162,7 +163,7 @@ class AdminService {
     return result.rows[0];
   }
 
-  async createBook(bookData) {
+  async createBook(bookData, adminId) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -170,9 +171,9 @@ class AdminService {
       const bookResult = await client.query(`
         INSERT INTO books (
           book_name, cover_image_url, isbn, language,
-          num_pages, edition, price, discount_price,
-          availability, description, initial_stock
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          num_pages, edition, price, discount_percentage,
+          availability, description, initial_stock, admin_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         bookData.book_name,
@@ -182,10 +183,11 @@ class AdminService {
         bookData.num_pages || null,
         bookData.edition || null,
         bookData.price,
-        bookData.discount_price || null,
+        parseInt(bookData.discount_percentage) || 0,
         bookData.availability || 'In Stock',
         bookData.description || null,
-        parseInt(bookData.stock_quantity) || 0  // picked up by trg_create_initial_book_copies
+        parseInt(bookData.stock_quantity) || 0,
+        adminId || null
       ]);
       const book = bookResult.rows[0];
 
@@ -239,7 +241,7 @@ class AdminService {
 
       const allowedFields = [
         'book_name', 'cover_image_url', 'isbn', 'language',
-        'num_pages', 'edition', 'price', 'discount_price',
+        'num_pages', 'edition', 'price', 'discount_percentage',
         'availability', 'description'
       ];
 
@@ -282,11 +284,13 @@ class AdminService {
         }
       }
 
-      if (bookData.stock_quantity !== undefined) {
-        await this.updateBookStock(bookId, parseInt(bookData.stock_quantity));
+      await client.query('COMMIT');
+      // Stock update runs AFTER the main transaction commits (it opens its own transaction)
+      const newStock = parseInt(bookData.stock_quantity);
+      if (!isNaN(newStock) && bookData.stock_quantity !== undefined && bookData.stock_quantity !== '') {
+        await this.updateBookStock(bookId, newStock);
       }
 
-      await client.query('COMMIT');
       return await this.getBookById(bookId);
     } catch (error) {
       await client.query('ROLLBACK');

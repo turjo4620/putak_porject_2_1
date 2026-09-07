@@ -24,12 +24,10 @@ const METHODS = [
     label: 'কার্ড পেমেন্ট',
     group: 'কার্ড',
     icons: [
-      // Visa
       <svg key="visa" viewBox="0 0 48 16" width="42" height="14" aria-label="Visa">
         <rect width="48" height="16" rx="3" fill="#1A1F71"/>
         <text x="4" y="12" fontFamily="Arial" fontSize="11" fontWeight="bold" fill="#fff" letterSpacing="1">VISA</text>
       </svg>,
-      // Mastercard
       <svg key="mc" viewBox="0 0 38 24" width="32" height="20" aria-label="Mastercard">
         <circle cx="13" cy="12" r="11" fill="#EB001B"/>
         <circle cx="25" cy="12" r="11" fill="#F79E1B"/>
@@ -42,17 +40,14 @@ const METHODS = [
     label: 'মোবাইল ব্যাংকিং',
     group: 'মোবাইল ব্যাংকিং',
     icons: [
-      // bKash
       <svg key="bkash" viewBox="0 0 48 20" width="42" height="18" aria-label="bKash">
         <rect width="48" height="20" rx="4" fill="#E2136E"/>
         <text x="6" y="14" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="#fff">bKash</text>
       </svg>,
-      // Nagad
       <svg key="nagad" viewBox="0 0 48 20" width="42" height="18" aria-label="Nagad">
         <rect width="48" height="20" rx="4" fill="#F05A28"/>
         <text x="6" y="14" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="#fff">Nagad</text>
       </svg>,
-      // Rocket
       <svg key="rocket" viewBox="0 0 52 20" width="46" height="18" aria-label="Rocket">
         <rect width="52" height="20" rx="4" fill="#8b08a2"/>
         <text x="6" y="14" fontFamily="Arial" fontSize="9" fontWeight="bold" fill="#fff">Rocket</text>
@@ -78,14 +73,14 @@ export default function PaymentPage() {
   const navigate    = useNavigate()
   const { fetchCart } = useApp()
 
-  const [order, setOrder]         = useState(null)
+  const [order, setOrder]           = useState(null)
   const [orderItems, setOrderItems] = useState([])
-  const [method, setMethod]       = useState('cod')
-  const [form, setForm]           = useState({})
+  const [method, setMethod]         = useState('cod')
+  const [form, setForm]             = useState({})
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError]         = useState('')
-  const [loadError, setLoadError] = useState('')
-  const [copied, setCopied]       = useState(false)
+  const [error, setError]           = useState('')
+  const [loadError, setLoadError]   = useState('')
+  const [copied, setCopied]         = useState(false)
 
   useEffect(() => {
     api.get(`/orders/${orderId}`)
@@ -102,23 +97,8 @@ export default function PaymentPage() {
     setSubmitting(true)
     try {
       await api.post(`/payments/${orderId}`, { method, ...form })
-<<<<<<< HEAD
-      // Navigate to the Thank You page, passing everything needed for the recap
-      navigate(`/order-success/${orderId}`, {
-        state: {
-          order,
-          items: orderItems,
-          method,
-          providerName: form.providerName || null,
-          cardBrand:    form.cardBrand    || null,
-          cardLast4:    form.cardLast4    || null,
-        },
-        replace: true,   // so Back button doesn't re-submit
-      })
-=======
-      await fetchCart()  // now refresh cart from DB — it's empty after order was placed
+      await fetchCart()  // re-sync cart from DB (now empty after order placed)
       navigate('/account/orders')
->>>>>>> 1d8541fee706e212b71f6eab93632e2cae4288b4
     } catch (err) {
       setError(err.message || 'পেমেন্ট সম্পন্ন করা যায়নি')
     } finally {
@@ -134,7 +114,6 @@ export default function PaymentPage() {
     })
   }
 
-  // Dynamic CTA label
   const ctaLabel = submitting
     ? 'প্রসেস হচ্ছে...'
     : method === 'cod'
@@ -147,16 +126,24 @@ export default function PaymentPage() {
     <div className="payment-page">
       <div className="container">
 
-        {/* Breadcrumb with top spacing to avoid nav overlap */}
         <p className="payment-page__breadcrumb">
           <Link to="/">হোম</Link>
           <span> › </span>
-          <Link to="/cart">কার্ট</Link>
+          <Link to="/account/orders">আমার অর্ডার</Link>
           <span> › </span>
           <span>পেমেন্ট</span>
         </p>
 
-        <h1 className="payment-page__title">পেমেন্ট করুন</h1>
+        <div className="payment-page__top-bar">
+          <button
+            className="payment-page__back-btn"
+            onClick={() => navigate(-1)}
+            type="button"
+          >
+            ← পেছনে যান
+          </button>
+          <h1 className="payment-page__title">পেমেন্ট করুন</h1>
+        </div>
 
         {loadError && <p className="payment-page__error">{loadError}</p>}
 
@@ -186,8 +173,6 @@ export default function PaymentPage() {
                         <span className="payment-method__label">{m.label}</span>
                         <div className="payment-method__icons">{m.icons}</div>
                       </div>
-
-                      {/* COD helper text inside the card */}
                       {m.id === 'cod' && method === 'cod' && (
                         <p className="payment-method__cod-note">
                           ডেলিভারির সময় পণ্য বুঝে নিয়ে ক্যাশ পরিশোধ করুন।
@@ -242,13 +227,20 @@ export default function PaymentPage() {
               <button type="submit" className="payment-page__pay-btn" disabled={submitting}>
                 {ctaLabel}
               </button>
+
+              <button
+                type="button"
+                className="payment-page__skip-btn"
+                onClick={async () => { await fetchCart(); navigate('/account/orders'); }}
+              >
+                পরে পরিশোধ করব
+              </button>
             </form>
 
             {/* ── Right: Order summary ── */}
             <div className="payment-page__summary">
               <h2>অর্ডার সারসংক্ষেপ</h2>
 
-              {/* Order number with copy */}
               <div className="payment-page__summary-row">
                 <span>অর্ডার নম্বর</span>
                 <div className="payment-page__order-id">
@@ -274,7 +266,6 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              {/* Status badge */}
               <div className="payment-page__summary-row">
                 <span>স্ট্যাটাস</span>
                 <span className={`payment-page__status-badge payment-page__status-badge--${order.status}`}>
@@ -282,7 +273,6 @@ export default function PaymentPage() {
                 </span>
               </div>
 
-              {/* Item previews */}
               {orderItems.length > 0 && (
                 <div className="payment-page__items-preview">
                   {orderItems.map((item, i) => (

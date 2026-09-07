@@ -25,8 +25,10 @@ async function getCartWithItems(userId) {
   const cart = await getOrCreateCart(userId);
   const items = await pool.query(
     `SELECT ci.cart_item_id, ci.book_id, ci.quantity,
-            b.book_name, b.cover_image_url, b.price, b.discount_price,
-            COALESCE(b.discount_price, b.price) AS locked_price,
+            b.book_name, b.cover_image_url, b.price,
+            b.discount_percentage,
+            ROUND(b.price * (1 - b.discount_percentage / 100.0), 2) AS discount_price,
+            ROUND(b.price * (1 - b.discount_percentage / 100.0), 2) AS locked_price,
             MIN(a.name) AS author,
             MIN(a.name) AS authors
      FROM cart_item ci
@@ -34,7 +36,8 @@ async function getCartWithItems(userId) {
      LEFT JOIN book_author ba ON b.id = ba.book_id
      LEFT JOIN authors a ON ba.author_id = a.author_id
      WHERE ci.cart_id = $1
-     GROUP BY ci.cart_item_id, ci.book_id, ci.quantity, b.book_name, b.cover_image_url, b.price, b.discount_price
+     GROUP BY ci.cart_item_id, ci.book_id, ci.quantity,
+              b.book_name, b.cover_image_url, b.price, b.discount_percentage
      ORDER BY ci.cart_item_id`,
     [cart.cart_id]
   );
@@ -45,13 +48,15 @@ async function addItem(userId, bookId, quantity = 1) {
   const cart = await getOrCreateCart(userId);
 
   const bookRes = await pool.query(
-    'SELECT id, price, discount_price FROM books WHERE id = $1',
+    `SELECT id, price, discount_percentage,
+            ROUND(price * (1 - discount_percentage / 100.0), 2) AS discount_price
+     FROM books WHERE id = $1`,
     [bookId]
   );
   if (!bookRes.rows.length) {
     throw { status: 404, message: 'বই খুঁজে পাওয়া যায়নি' };
   }
-  const book = bookRes.rows[0];
+  const book  = bookRes.rows[0];
   const price = book.discount_price ?? book.price;
 
   const existingRes = await pool.query(

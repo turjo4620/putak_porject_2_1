@@ -79,10 +79,16 @@ export default function BookDetailPage() {
   // Stock handling based on your availability column
   const inStock = book.availability !== 'Out of stock' && book.availability !== 'Unavailable'
   
-  // Pricing logic (If discount_price exists, show price as crossed out)
-  const currentPrice = book.discount_price || book.price
-  const originalPrice = book.discount_price && book.discount_price < book.price ? book.price : null
-  const discountPct = book.discount_percentage
+  // Pricing: discount_price is computed by backend as price*(1-discount_percentage/100)
+  const currentPrice  = book.discount_price && Number(book.discount_price) < Number(book.price)
+    ? book.discount_price
+    : book.price
+  const originalPrice = book.discount_price && Number(book.discount_price) < Number(book.price)
+    ? book.price
+    : null
+  const discountPct   = book.discount_percentage
+    ? `${book.discount_percentage}%`
+    : null
 
   const wished = isWished(book.id)
   const inCart = isInCart(book.id)

@@ -21,14 +21,16 @@ async function getWishlistWithItems(userId) {
   const items = await pool.query(
     `SELECT wi.wishlist_item_id, wi.book_id, wi.added_at,
             b.book_name, b.cover_image_url,
-            b.price, b.discount_price,
+            b.price, b.discount_percentage,
+            ROUND(b.price * (1 - b.discount_percentage / 100.0), 2) AS discount_price,
             MIN(a.name) AS author
      FROM wishlist_item wi
      JOIN books b ON b.id = wi.book_id
      LEFT JOIN book_author ba ON b.id = ba.book_id
      LEFT JOIN authors a ON ba.author_id = a.author_id
      WHERE wi.wishlist_id = $1
-     GROUP BY wi.wishlist_item_id, wi.book_id, wi.added_at, b.book_name, b.cover_image_url, b.price, b.discount_price
+     GROUP BY wi.wishlist_item_id, wi.book_id, wi.added_at,
+              b.book_name, b.cover_image_url, b.price, b.discount_percentage
      ORDER BY wi.added_at DESC`,
     [wishlist.wishlist_id]
   );

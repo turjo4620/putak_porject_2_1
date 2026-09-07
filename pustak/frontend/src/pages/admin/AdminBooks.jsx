@@ -200,10 +200,15 @@ export default function AdminBooks() {
                         : 'N/A'}
                     </td>
                     <td>
-                      {book.discount_price ? (
+                      {book.discount_percentage > 0 ? (
                         <>
                           <span className="price-original">৳{book.price}</span>
-                          <span className="price-discount">৳{book.discount_price}</span>
+                          <span className="price-discount">
+                            ৳{Math.round(book.price * (1 - book.discount_percentage / 100))}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#16a34a', marginLeft: 4 }}>
+                            ({book.discount_percentage}% ছাড়)
+                          </span>
                         </>
                       ) : (
                         `৳${book.price}`
@@ -285,7 +290,7 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
     num_pages: book?.num_pages || '',
     edition: book?.edition || '',
     price: book?.price || '',
-    discount_price: book?.discount_price || '',
+    discount_percentage: book?.discount_percentage || 0,
     availability: book?.availability || 'In Stock',
     description: book?.description || '',
     author_ids: book?.authors?.map(a => a.author_id) || [],
@@ -424,14 +429,21 @@ function BookModal({ book, categories, authors, publications, onClose, onSuccess
             </div>
 
             <div className="form-group">
-              <label>Discount Price</label>
+              <label>Discount % <small style={{color:'#888'}}>(0–100, e.g. 18 for 18% off)</small></label>
               <input
                 type="number"
-                step="0.01"
-                value={formData.discount_price}
-                onChange={(e) => handleChange('discount_price', e.target.value)}
-                placeholder="Auto-calculates % off"
+                min="0"
+                max="100"
+                step="1"
+                value={formData.discount_percentage}
+                onChange={(e) => handleChange('discount_percentage', parseInt(e.target.value) || 0)}
+                placeholder="0"
               />
+              {formData.price && formData.discount_percentage > 0 && (
+                <small style={{ color: '#16a34a' }}>
+                  Discounted price: ৳{Math.round(formData.price * (1 - formData.discount_percentage / 100))}
+                </small>
+              )}
             </div>
 
             <div className="form-group">

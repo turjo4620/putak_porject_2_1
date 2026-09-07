@@ -275,13 +275,15 @@ async function placeBuyNowOrder(userId, bookId, quantity = 1, addressId = null, 
 
     // Get book price
     const bookRes = await client.query(
-      'SELECT price, discount_price, book_name FROM books WHERE id = $1',
+      `SELECT price, discount_percentage, book_name,
+              ROUND(price * (1 - discount_percentage / 100.0), 2) AS discount_price
+       FROM books WHERE id = $1`,
       [bookId]
     );
     if (!bookRes.rows.length) {
       throw { status: 404, message: 'বই খুঁজে পাওয়া যায়নি' };
     }
-    const book = bookRes.rows[0];
+    const book         = bookRes.rows[0];
     const pricePerUnit = book.discount_price ?? book.price;
 
     // Calculate totals

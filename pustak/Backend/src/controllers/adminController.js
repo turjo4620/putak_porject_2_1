@@ -51,7 +51,7 @@ class AdminController {
 
   async createBook(req, res) {
     try {
-      const book = await adminService.createBook(req.body);
+      const book = await adminService.createBook(req.body, req.admin.user_id);
       res.status(201).json(book);
     } catch (error) {
       console.error('Create book error:', error);
