@@ -141,7 +141,8 @@ export function AppProvider({ children }) {
   // Places an order from the current cart. Returns the created order row.
   const placeOrder = async (addressId, couponCode = null) => {
     const order = await api.post('/orders', { addressId, couponCode })
-    setCartItems([])
+    // Don't clear cart state here — keep items visible if user navigates back.
+    // Cart will be refreshed from DB on next fetchCart() call.
     return order
   }
 
