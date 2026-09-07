@@ -61,6 +61,7 @@ export default function BookDetailPage() {
 
   // Real Database Column Mappings
   const category = book.category_name || book.raw_category || 'সাধারণ'
+  const publicationId = book.publications?.[0]?.publication_id || null
   const publisher = book.publications?.[0]?.title || book.publisher || 'অজ্ঞাত প্রকাশক'
   const rating = book.rating ? Number(book.rating) : 0
   const reviews = book.num_reviews || 0
@@ -177,7 +178,15 @@ export default function BookDetailPage() {
                 <span className="book-detail__author-link">{book.author || 'অজ্ঞাত লেখক'}</span>
               )}
             </p>
-            <p className="book-detail__publisher">প্রকাশক: <strong>{publisher}</strong></p>
+            <p className="book-detail__publisher">প্রকাশক:{' '}
+              {publicationId ? (
+                <Link to={`/publisher/${publicationId}`} className="book-detail__publisher-link">
+                  <strong>{publisher}</strong>
+                </Link>
+              ) : (
+                <strong>{publisher}</strong>
+              )}
+            </p>
 
             <div className="book-detail__rating" aria-label={`রেটিং ${rating}`}>
               <span className="book-detail__stars" aria-hidden="true">
