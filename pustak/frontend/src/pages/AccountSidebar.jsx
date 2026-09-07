@@ -1,67 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import './account-dashboard.css';
+import { NavLink, useNavigate } from 'react-router-dom'
+import { User, Package, Heart, Star, LogOut, Camera } from 'lucide-react'
+import { useApp } from '../context/AppContext'
+import './account-dashboard.css'
 
-const AccountSidebar = () => {
-  const [user, setUser] = useState({ name: "", email: "", initials: "" });
-  const [loading, setLoading] = useState(true);
+const NAV_ITEMS = [
+  { to: '/account/info',     icon: User,    label: 'আমার তথ্য' },
+  { to: '/account/orders',   icon: Package, label: 'অর্ডার ও ট্র্যাকিং' },
+  { to: '/account/wishlist', icon: Heart,   label: 'পছন্দের তালিকা' },
+  { to: '/account/reviews',  icon: Star,    label: 'রিভিউ ও রেটিং' },
+]
 
-  useEffect(() => {
-    const fetchUserBrief = async () => {
-      try {
-        // Use your actual endpoint that returns the logged-in user's data
-        const response = await fetch('/api/user/profile'); 
-        
-        const contentType = response.headers.get("content-type");
-        if (response.ok && contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          setUser({
-            name: data.name,
-            email: data.email,
-            // Get first letter of name for the avatar, default to User if null
-            initials: data.name ? data.name.charAt(0).toUpperCase() : "U"
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch sidebar user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+export default function AccountSidebar() {
+  const { authUser, signOut } = useApp()
+  const navigate = useNavigate()
 
-    fetchUserBrief();
-  }, []);
+  const name     = authUser?.name     || authUser?.full_name || ''
+  const email    = authUser?.email    || ''
+  const phone    = authUser?.phone    || ''
+  const subtitle = email || phone || ''
+  const initials = name ? name.trim().charAt(0).toUpperCase() : 'U'
+
+  const handleSignOut = () => {
+    signOut()
+    navigate('/')
+  }
 
   return (
-    <div className="account-sidebar">
+    <aside className="account-sidebar">
+      {/* ── Identity card ── */}
       <div className="sidebar-profile-header">
-        <div className="avatar-circle">
-          {loading ? "..." : user.initials}
+        <div className="sidebar-avatar-wrap">
+          <div className="avatar-circle">{initials}</div>
+          <button
+            className="sidebar-avatar-edit"
+            aria-label="প্রোফাইল ছবি পরিবর্তন করুন"
+            title="প্রোফাইল এডিট করুন"
+            onClick={() => navigate('/account/info')}
+          >
+            <Camera size={13} />
+          </button>
         </div>
-        <div className="sidebar-profile-info">
-          <h3>{loading ? "Loading..." : user.name}</h3>
-          <p>{user.email}</p>
-        </div>
+        {name && (
+          <div className="sidebar-profile-info">
+            <h3>{name}</h3>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+        )}
       </div>
-      
-      <nav className="sidebar-nav">
-        <NavLink to="/account/info" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-          Account Info
-        </NavLink>
-        <NavLink to="/account/orders" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-          Orders & Tracking
-        </NavLink>
-        <NavLink to="/account/wishlist" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-          Wishlist
-        </NavLink>
-        <NavLink to="/account/reviews" className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
-          Rating & Reviews
-        </NavLink>
-      </nav>
-      
-      <button className="sign-out-btn">Sign out</button>
-    </div>
-  );
-};
 
-export default AccountSidebar;
+      {/* ── Navigation ── */}
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            <Icon size={16} strokeWidth={1.8} className="nav-item__icon" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* ── Sign out ── */}
+      <button className="sign-out-btn" onClick={handleSignOut}>
+        <LogOut size={15} strokeWidth={1.8} />
+        লগআউট
+      </button>
+    </aside>
+  )
+}

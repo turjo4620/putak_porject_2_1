@@ -150,7 +150,43 @@ async function listOrders(userId) {
     'SELECT * FROM orders WHERE user_id = $1 ORDER BY order_date DESC',
     [userId]
   );
-  return res.rows;
+  const orders = res.rows;
+
+  // Attach a compact item preview (cover + title + qty) for each order
+  if (orders.length > 0) {
+    const orderIds = orders.map(o => o.order_id);
+    const itemsRes = await pool.query(
+      `SELECT
+         oi.order_id,
+         b.id         AS book_id,
+         b.book_name,
+         b.cover_image_url,
+         COUNT(*)::int AS quantity
+       FROM order_item oi
+       JOIN book_copy bc ON bc.copy_id = oi.copy_id
+       JOIN books     b  ON b.id       = bc.book_id
+       WHERE oi.order_id = ANY($1::int[])
+       GROUP BY oi.order_id, b.id, b.book_name, b.cover_image_url
+       ORDER BY oi.order_id, b.book_name`,
+      [orderIds]
+    );
+    // Group by order_id
+    const itemMap = {};
+    for (const row of itemsRes.rows) {
+      if (!itemMap[row.order_id]) itemMap[row.order_id] = [];
+      itemMap[row.order_id].push({
+        book_id: row.book_id,
+        book_name: row.book_name,
+        cover_image_url: row.cover_image_url,
+        quantity: row.quantity,
+      });
+    }
+    for (const order of orders) {
+      order.items = itemMap[order.order_id] || [];
+    }
+  }
+
+  return orders;
 }
 
 async function getTrackingInfo(userId, orderId) {

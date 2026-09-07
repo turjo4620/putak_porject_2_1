@@ -1,51 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../api/http';
-import './account-dashboard.css';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Search, X } from 'lucide-react'
+import { api } from '../api/http'
+import './account-dashboard.css'
 
-// Status badge colours
-const STATUS_COLORS = {
-  Pending:    { bg: '#fff8e1', color: '#f59e0b' },
-  Confirmed:  { bg: '#e8f5e9', color: '#16a34a' },
-  Paid:       { bg: '#e8f5e9', color: '#16a34a' },
-  Processing: { bg: '#e3f2fd', color: '#1d4ed8' },
-  Shipped:    { bg: '#ede9fe', color: '#7c3aed' },
-  Delivered:  { bg: '#d1fae5', color: '#065f46' },
-  Cancelled:  { bg: '#fee2e2', color: '#dc2626' },
-};
+// ── Bengali helpers ─────────────────────────────────────────────────────────
+const toBn = (n) => String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d])
+const fmtBnAmount = (n) => toBn(Number(n).toFixed(2))
 
-function statusStyle(status) {
-  return STATUS_COLORS[status] || { bg: '#f3f4f6', color: '#374151' };
+// ── Status localisation ─────────────────────────────────────────────────────
+const STATUS_BN = {
+  pending:    'অপেক্ষমাণ',
+  Pending:    'অপেক্ষমাণ',
+  confirmed:  'নিশ্চিত',
+  Confirmed:  'নিশ্চিত',
+  paid:       'পরিশোধিত',
+  Paid:       'পরিশোধিত',
+  processing: 'প্রসেসিং',
+  Processing: 'প্রসেসিং',
+  shipped:    'পাঠানো হয়েছে',
+  Shipped:    'পাঠানো হয়েছে',
+  delivered:  'ডেলিভার্ড',
+  Delivered:  'ডেলিভার্ড',
+  cancelled:  'বাতিল',
+  Cancelled:  'বাতিল',
 }
 
-// Tracking modal shown when user clicks "ট্র্যাক করুন"
+const STATUS_STYLE = {
+  Pending:    { bg: '#fff8e1', color: '#b45309', border: '#fde68a' },
+  pending:    { bg: '#fff8e1', color: '#b45309', border: '#fde68a' },
+  Confirmed:  { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+  confirmed:  { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+  Paid:       { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+  paid:       { bg: '#dcfce7', color: '#166534', border: '#86efac' },
+  Processing: { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  processing: { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  Shipped:    { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+  shipped:    { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
+  Delivered:  { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  delivered:  { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  Cancelled:  { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+  cancelled:  { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
+}
+
+function statusStyle(s) {
+  return STATUS_STYLE[s] || { bg: '#f3f4f6', color: '#374151', border: '#e5e7eb' }
+}
+
+// ── Tracking modal ──────────────────────────────────────────────────────────
 function TrackingModal({ orderId, orderNumber, onClose }) {
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
 
   useEffect(() => {
     api.get(`/orders/${orderId}/tracking`)
-      .then(d => setData(d))
+      .then(d  => setData(d))
       .catch(e => setError(e.message || 'ট্র্যাকিং তথ্য লোড করা যায়নি'))
-      .finally(() => setLoading(false));
-  }, [orderId]);
+      .finally(() => setLoading(false))
+  }, [orderId])
 
-  const delivery = data?.delivery;
+  const delivery = data?.delivery
 
-  // Build a simple visual timeline
   const steps = [
     { key: 'ordered',    label: 'অর্ডার দেওয়া হয়েছে',  done: true },
     { key: 'confirmed',  label: 'নিশ্চিত করা হয়েছে',     done: ['Confirmed','Paid','Processing','Shipped','Delivered'].includes(data?.order?.status) },
     { key: 'dispatched', label: 'পাঠানো হয়েছে',           done: !!delivery?.dispatch_date },
     { key: 'shipped',    label: 'পথে আছে',                done: delivery?.status === 'Shipped' || delivery?.status === 'Delivered' },
     { key: 'delivered',  label: 'পৌঁছে গেছে',             done: !!delivery?.delivered_at },
-  ];
+  ]
 
   return (
     <div className="tracking-modal-backdrop" onClick={onClose}>
       <div className="tracking-modal" onClick={e => e.stopPropagation()}>
         <div className="tracking-modal__header">
-          <h3>ট্র্যাকিং — Order #{orderNumber}</h3>
+          <h3>ট্র্যাকিং — #{orderNumber}</h3>
           <button className="tracking-modal__close" onClick={onClose} aria-label="বন্ধ করুন">✕</button>
         </div>
 
@@ -54,7 +83,6 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
 
         {!loading && !error && (
           <>
-            {/* Timeline */}
             <ul className="tracking-timeline">
               {steps.map((s, i) => (
                 <li key={s.key} className={`tracking-step ${s.done ? 'tracking-step--done' : ''}`}>
@@ -65,7 +93,6 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
               ))}
             </ul>
 
-            {/* Delivery details */}
             {delivery ? (
               <table className="tracking-table">
                 <tbody>
@@ -85,61 +112,80 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-const AccountOrders = () => {
-  const [orders,  setOrders]  = useState([]);
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(true);
-  const [search,  setSearch]  = useState('');
-  const [tab,     setTab]     = useState('all');
-
-  // Tracking modal state
-  const [trackingOrder, setTrackingOrder] = useState(null); // { order_id, order_number }
+// ── Main component ──────────────────────────────────────────────────────────
+export default function AccountOrders() {
+  const navigate = useNavigate()
+  const [orders,  setOrders]  = useState([])
+  const [error,   setError]   = useState('')
+  const [loading, setLoading] = useState(true)
+  const [search,  setSearch]  = useState('')
+  const [tab,     setTab]     = useState('all')
+  const [trackingOrder, setTrackingOrder] = useState(null)
 
   useEffect(() => {
     api.get('/orders')
       .then(data => setOrders(data || []))
-      .catch(err => setError(err.message || 'অর্ডার লোড করা যায়নি। ব্যাকএন্ড সার্ভার চালু আছে কিনা নিশ্চিত করুন।'))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(err => setError(err.message || 'অর্ডার লোড করা যায়নি।'))
+      .finally(() => setLoading(false))
+  }, [])
 
-  // Tab filter map
   const TAB_STATUS = {
     all:        null,
     topay:      'Pending',
     processing: 'Processing',
     shipped:    'Shipped',
-  };
-
-  const filtered = orders.filter(o => {
-    const matchTab    = !TAB_STATUS[tab] || o.status === TAB_STATUS[tab];
-    const matchSearch = !search.trim() ||
-      o.order_number?.toLowerCase().includes(search.trim().toLowerCase()) ||
-      String(o.order_id).includes(search.trim());
-    return matchTab && matchSearch;
-  });
+  }
 
   const TABS = [
     { key: 'all',        label: 'সব অর্ডার' },
     { key: 'topay',      label: 'পেমেন্ট বাকি' },
     { key: 'processing', label: 'প্রসেসিং' },
     { key: 'shipped',    label: 'পাঠানো হয়েছে' },
-  ];
+  ]
+
+  // Counts per tab
+  const tabCounts = TABS.reduce((acc, t) => {
+    acc[t.key] = TAB_STATUS[t.key]
+      ? orders.filter(o => o.status === TAB_STATUS[t.key]).length
+      : orders.length
+    return acc
+  }, {})
+
+  const filtered = orders.filter(o => {
+    const matchTab    = !TAB_STATUS[tab] || o.status === TAB_STATUS[tab]
+    const matchSearch = !search.trim() ||
+      o.order_number?.toLowerCase().includes(search.trim().toLowerCase()) ||
+      String(o.order_id).includes(search.trim())
+    return matchTab && matchSearch
+  })
 
   return (
     <div className="account-orders-section">
-      {/* Header card: search + tabs */}
+
+      {/* ── Header: search + tabs ── */}
       <div className="orders-header card">
-        <input
-          type="text"
-          placeholder="অর্ডার নম্বর দিয়ে খুঁজুন"
-          className="search-input"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+
+        {/* Real search bar */}
+        <div className="orders-search-wrap">
+          <Search size={16} className="orders-search-icon" />
+          <input
+            type="text"
+            placeholder="অর্ডার নম্বর দিয়ে খুঁজুন"
+            className="orders-search-input"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className="orders-search-clear" onClick={() => setSearch('')} aria-label="মুছুন">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Filter tabs with count badges */}
         <div className="orders-tabs">
           {TABS.map(t => (
             <button
@@ -148,57 +194,111 @@ const AccountOrders = () => {
               onClick={() => setTab(t.key)}
             >
               {t.label}
+              {tabCounts[t.key] > 0 && (
+                <span className="tab-badge">{toBn(tabCounts[t.key])}</span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
       {error   && <div className="card error-banner">{error}</div>}
-      {loading && <div className="card">লোড হচ্ছে...</div>}
+      {loading && <div className="card orders-loading">লোড হচ্ছে...</div>}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="card" style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-          কোনো অর্ডার পাওয়া যায়নি।
-        </div>
+        <div className="card orders-empty">কোনো অর্ডার পাওয়া যায়নি।</div>
       )}
 
+      {/* ── Order cards ── */}
       {!loading && filtered.map(order => {
-        const { bg, color } = statusStyle(order.status);
+        const { bg, color, border } = statusStyle(order.status)
+        const isPending = order.status === 'Pending' || order.status === 'pending'
+
         return (
-          <div key={order.order_id} className="card order-card">
-            <div className="order-card-header">
-              <span className="order-id">অর্ডার #{order.order_number}</span>
-              <span
-                className="order-status"
-                style={{ background: bg, color, padding: '2px 10px', borderRadius: '999px', fontWeight: 600, fontSize: '0.82rem' }}
-              >
-                {order.status || 'Pending'}
-              </span>
+          <div key={order.order_id} className="order-card">
+
+            {/* Top bar */}
+            <div className="order-card__header">
+              <div className="order-card__id-group">
+                <span className="order-card__label">অর্ডার</span>
+                <span className="order-card__number">#{order.order_number}</span>
+              </div>
+              <div className="order-card__meta">
+                <span className="order-card__date">
+                  {new Date(order.order_date).toLocaleDateString('bn-BD', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                  })}
+                </span>
+                <span
+                  className="order-card__status"
+                  style={{ background: bg, color, border: `1px solid ${border}` }}
+                >
+                  {STATUS_BN[order.status] || order.status}
+                </span>
+              </div>
             </div>
 
-            <div className="order-card-body">
-              <p>
-                <strong>অর্ডারের তারিখ:</strong>{' '}
-                {new Date(order.order_date).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
-              <p>
-                <strong>মোট পরিমাণ:</strong> ৳{Number(order.total_amount).toFixed(2)}
-              </p>
+            {/* Card body */}
+            <div className="order-card__body">
+
+              {/* Book thumbnails preview */}
+              {order.items && order.items.length > 0 && (
+                <div className="order-card__items">
+                  {order.items.slice(0, 4).map((item, i) => (
+                    <div key={i} className="order-card__item">
+                      <div className="order-card__thumb-wrap">
+                        <img
+                          src={item.cover_image_url}
+                          alt={item.book_name}
+                          className="order-card__thumb"
+                        />
+                      </div>
+                      <div className="order-card__item-info">
+                        <span className="order-card__item-title">{item.book_name}</span>
+                        <span className="order-card__item-qty">×{toBn(item.quantity)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {order.items.length > 4 && (
+                    <span className="order-card__more">+{toBn(order.items.length - 4)}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Price row */}
+              <div className="order-card__price-row">
+                <span className="order-card__price-label">মোট পরিমাণ</span>
+                <span className="order-card__price">৳{fmtBnAmount(order.total_amount)}</span>
+              </div>
             </div>
 
-            <div className="order-card-footer" style={{ paddingTop: '0.75rem', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {/* Footer: action buttons */}
+            <div className="order-card__footer">
+              {isPending && (
+                <button
+                  className="order-btn order-btn--primary"
+                  onClick={() => navigate(`/payment/${order.order_id}`)}
+                >
+                  পেমেন্ট সম্পন্ন করুন
+                </button>
+              )}
               <button
-                className="track-btn"
+                className="order-btn order-btn--ghost"
                 onClick={() => setTrackingOrder({ order_id: order.order_id, order_number: order.order_number })}
               >
                 ট্র্যাক করুন
               </button>
+              <button
+                className="order-btn order-btn--outline"
+                onClick={() => navigate(`/payment/${order.order_id}`)}
+              >
+                বিস্তারিত দেখুন
+              </button>
             </div>
           </div>
-        );
+        )
       })}
 
-      {/* Tracking modal */}
       {trackingOrder && (
         <TrackingModal
           orderId={trackingOrder.order_id}
@@ -207,7 +307,5 @@ const AccountOrders = () => {
         />
       )}
     </div>
-  );
-};
-
-export default AccountOrders;
+  )
+}

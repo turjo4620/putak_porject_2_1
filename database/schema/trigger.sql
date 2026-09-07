@@ -1,3 +1,14 @@
+-- =============================================================
+-- PUSTAK — Book Triggers
+-- Run this once against your database.
+-- =============================================================
+
+
+-- -------------------------------------------------------------
+-- TRIGGER 1: Auto-compute discount_percentage on INSERT/UPDATE
+--            of books.price or books.discount_price
+-- -------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION fn_calc_discount_percentage()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -20,8 +31,6 @@ CREATE TRIGGER trg_calc_discount_percentage
   ON books
   FOR EACH ROW
   EXECUTE FUNCTION fn_calc_discount_percentage();
-
-
 
 
 -- -------------------------------------------------------------
@@ -73,6 +82,7 @@ CREATE TRIGGER trg_sync_book_availability
   FOR EACH ROW
   EXECUTE FUNCTION fn_sync_book_availability();
 
+SELECT * FROM coupons
 
 -- -------------------------------------------------------------
 -- TRIGGER 3: On INSERT into books, automatically create

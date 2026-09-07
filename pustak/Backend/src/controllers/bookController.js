@@ -355,6 +355,7 @@ const getBookById = async (req, res) => {
       ...book,
       authors: authorsResult.rows,
       author: authorsResult.rows.length > 0 ? authorsResult.rows[0].name : null,
+      author_id: authorsResult.rows.length > 0 ? authorsResult.rows[0].author_id : null,
       publications: publicationsResult.rows,
       categories: categoriesResult.rows
     };

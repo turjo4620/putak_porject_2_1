@@ -3,10 +3,17 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import './CheckoutPage.css'
 
+// ── Bengali numeral helper ──────────────────────────────────────
+const toBn = (n) =>
+  String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d])
+
+const formatBnAmount = (num) =>
+  toBn(Number(num).toFixed(2))
+
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { cartItems, totalCartPrice, removeFromCart, placeOrder, authUser } = useApp()
+  const { cartItems, totalCartPrice, removeFromCart, incrementItem, decrementItem, placeOrder, authUser } = useApp()
 
   const buyNow = location.state?.buyNow || null
 
@@ -44,7 +51,6 @@ export default function CheckoutPage() {
       .then(data => {
         const list = Array.isArray(data) ? data : []
         setAddresses(list)
-        // Pre-select default address if one exists
         const def = list.find(a => a.is_default) || list[0]
         if (def) setSelectedAddressId(def.address_id)
       })
@@ -143,6 +149,9 @@ export default function CheckoutPage() {
 
   const isEmpty = displayItems.length === 0
 
+  // ── Selected address object ────────────────────────────────────
+  const selectedAddr = addresses.find(x => x.address_id === selectedAddressId)
+
   return (
     <div className="checkout-page">
       <div className="container">
@@ -166,16 +175,33 @@ export default function CheckoutPage() {
 
               {/* Items */}
               <div className="checkout-page__items">
-                <h2>অর্ডার তালিকা ({displayItems.length})</h2>
+                <h2>অর্ডার তালিকা ({toBn(displayItems.length)})</h2>
                 {displayItems.map((b, idx) => (
                   <div key={b.cart_item_id || b.book_id || idx} className="checkout-item">
                     <img src={b.cover_image_url} alt={b.book_name} className="checkout-item__cover" />
                     <div className="checkout-item__info">
                       <strong><Link to={`/book/${b.book_id}`}>{b.book_name}</Link></strong>
                       {b.authors && <span>{b.authors}</span>}
-                      {b.quantity > 1 && <span>পরিমাণ: {b.quantity}</span>}
-                      <span className="checkout-item__price">৳{b.price_sold || b.locked_price}</span>
+                      <span className="checkout-item__price">৳{formatBnAmount(b.price_sold || b.locked_price)}</span>
                     </div>
+
+                    {/* Quantity stepper */}
+                    {!buyNow && (
+                      <div className="checkout-item__stepper">
+                        <button
+                          className="checkout-item__stepper-btn"
+                          onClick={() => decrementItem(b)}
+                          aria-label="কমান"
+                        >−</button>
+                        <span className="checkout-item__stepper-qty">{toBn(b.quantity)}</span>
+                        <button
+                          className="checkout-item__stepper-btn"
+                          onClick={() => incrementItem(b)}
+                          aria-label="বাড়ান"
+                        >+</button>
+                      </div>
+                    )}
+
                     {!buyNow && (
                       <button className="checkout-item__remove" onClick={() => removeFromCart(b.cart_item_id)} aria-label="সরান">✕</button>
                     )}
@@ -202,13 +228,27 @@ export default function CheckoutPage() {
                           onChange={() => setSelectedAddressId(addr.address_id)}
                         />
                         <div className="checkout-address__text">
-                          <span>{addr.street}</span>
-                          {addr.area && <span>, {addr.area}</span>}
-                          {addr.district && <span>, {addr.district}</span>}
-                          {addr.division && <span>, {addr.division}</span>}
-                          {addr.postal_code && <span> - {addr.postal_code}</span>}
+                          {/* Structured address preview */}
+                          {authUser?.name && (
+                            <div className="checkout-address__name">
+                              {authUser.name}
+                              {authUser.phone && <span className="checkout-address__phone"> · {authUser.phone}</span>}
+                            </div>
+                          )}
+                          <div className="checkout-address__lines">
+                            <span>{addr.street}</span>
+                            {addr.area && <span>, {addr.area}</span>}
+                            {addr.district && <span>, {addr.district}</span>}
+                            {addr.division && <span>, {addr.division}</span>}
+                            {addr.postal_code && <span> – {addr.postal_code}</span>}
+                          </div>
                           {addr.is_default && <span className="checkout-address__default-badge">ডিফল্ট</span>}
                         </div>
+                        <button
+                          type="button"
+                          className="checkout-address__edit-btn"
+                          onClick={e => { e.preventDefault(); setShowAddForm(true) }}
+                        >পরিবর্তন</button>
                       </label>
                     ))}
                   </div>
@@ -300,11 +340,11 @@ export default function CheckoutPage() {
 
               <div className="checkout-page__summary-row">
                 <span>মোট বই</span>
-                <span>{displayItems.length} টি</span>
+                <span>{toBn(displayItems.length)}টি</span>
               </div>
               <div className="checkout-page__summary-row">
                 <span>উপমোট</span>
-                <span>৳{Number(subtotal).toFixed(2)}</span>
+                <span>৳{formatBnAmount(subtotal)}</span>
               </div>
 
               {!couponApplied ? (
@@ -326,7 +366,7 @@ export default function CheckoutPage() {
                 </div>
               ) : (
                 <div className="checkout-coupon__applied">
-                  <span>🎉 <strong>{couponApplied.code}</strong> — {couponApplied.description || `৳${couponApplied.discount_value} ছাড়`}</span>
+                  <span>🎉 <strong>{couponApplied.code}</strong> — {couponApplied.description || `৳${formatBnAmount(couponApplied.discount_value)} ছাড়`}</span>
                   <button className="checkout-coupon__remove" onClick={handleRemoveCoupon}>সরান</button>
                 </div>
               )}
@@ -334,7 +374,7 @@ export default function CheckoutPage() {
               {discountAmount > 0 && (
                 <div className="checkout-page__summary-row checkout-page__summary-discount">
                   <span>ছাড়</span>
-                  <span>− ৳{discountAmount.toFixed(2)}</span>
+                  <span>− ৳{formatBnAmount(discountAmount)}</span>
                 </div>
               )}
 
@@ -345,18 +385,8 @@ export default function CheckoutPage() {
 
               <div className="checkout-page__summary-total">
                 <strong>মোট</strong>
-                <strong>৳{finalTotal.toFixed(2)}</strong>
+                <strong>৳{formatBnAmount(finalTotal)}</strong>
               </div>
-
-              {/* Selected address preview */}
-              {selectedAddressId && (() => {
-                const a = addresses.find(x => x.address_id === selectedAddressId)
-                return a ? (
-                  <div className="checkout-page__addr-preview">
-                    <span>📍 {a.street}{a.area ? `, ${a.area}` : ''}{a.district ? `, ${a.district}` : ''}</span>
-                  </div>
-                ) : null
-              })()}
 
               {!selectedAddressId && (
                 <p className="checkout-page__addr-warn">⚠️ ঠিকানা নির্বাচন করুন</p>
@@ -367,7 +397,7 @@ export default function CheckoutPage() {
                 onClick={handlePlaceOrder}
                 disabled={placing || !selectedAddressId}
               >
-                {placing ? 'অর্ডার দেওয়া হচ্ছে...' : 'অর্ডার দিন'}
+                {placing ? 'অর্ডার দেওয়া হচ্ছে...' : 'পেমেন্টে এগিয়ে যান'}
               </button>
               <p className="checkout-page__note">
                 বাংলাদেশের যেকোনো ঠিকানায় ৩-৫ কার্যদিবসে ডেলিভারি

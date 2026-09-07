@@ -165,8 +165,14 @@ export default function BookDetailPage() {
             <span className="book-detail__category">{category}</span>
             <h1 className="book-detail__title">{book.book_name}</h1>
             <p className="book-detail__author">
-              লেখক: {book.author_id ? (
-                <Link to={`/author/${book.author_id}`} className="book-detail__author-link">{book.author}</Link>
+              লেখক:{' '}
+              {book.authors && book.authors.length > 0 ? (
+                book.authors.map((a, i) => (
+                  <span key={a.author_id}>
+                    <Link to={`/author/${a.author_id}`} className="book-detail__author-link">{a.name}</Link>
+                    {i < book.authors.length - 1 && ', '}
+                  </span>
+                ))
               ) : (
                 <span className="book-detail__author-link">{book.author || 'অজ্ঞাত লেখক'}</span>
               )}
