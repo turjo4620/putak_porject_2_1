@@ -142,7 +142,44 @@ async function getOrderById(userId, orderId) {
     [orderId]
   );
 
-  return { order: orderRes.rows[0], items: itemsRes.rows };
+  // Delivery address
+  const addrRes = await pool.query(
+    `SELECT street, area, district, division, postal_code
+     FROM addresses
+     WHERE address_id = (SELECT address_id FROM orders WHERE order_id = $1)`,
+    [orderId]
+  );
+
+  // Latest payment info (method + provider details)
+  const payRes = await pool.query(
+    `SELECT
+       p.payment_status,
+       CASE
+         WHEN m.payment_id IS NOT NULL THEN 'mfs'
+         WHEN c.payment_id IS NOT NULL THEN 'card'
+         WHEN cod.payment_id IS NOT NULL THEN 'cod'
+         ELSE NULL
+       END AS method,
+       m.provider_name,
+       m.sender_mobile_no,
+       c.card_brand,
+       c.card_last_4_digits
+     FROM payments p
+     LEFT JOIN mfs_payments  m   ON m.payment_id   = p.payment_id
+     LEFT JOIN card_payments c   ON c.payment_id   = p.payment_id
+     LEFT JOIN cash_on_deliveries cod ON cod.payment_id = p.payment_id
+     WHERE p.order_id = $1
+     ORDER BY p.payment_id DESC
+     LIMIT 1`,
+    [orderId]
+  );
+
+  return {
+    order:   orderRes.rows[0],
+    items:   itemsRes.rows,
+    address: addrRes.rows[0] || null,
+    payment: payRes.rows[0]  || null,
+  };
 }
 
 async function listOrders(userId) {

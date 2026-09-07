@@ -100,7 +100,18 @@ export default function PaymentPage() {
     setSubmitting(true)
     try {
       await api.post(`/payments/${orderId}`, { method, ...form })
-      navigate('/account/orders')
+      // Navigate to the Thank You page, passing everything needed for the recap
+      navigate(`/order-success/${orderId}`, {
+        state: {
+          order,
+          items: orderItems,
+          method,
+          providerName: form.providerName || null,
+          cardBrand:    form.cardBrand    || null,
+          cardLast4:    form.cardLast4    || null,
+        },
+        replace: true,   // so Back button doesn't re-submit
+      })
     } catch (err) {
       setError(err.message || 'পেমেন্ট সম্পন্ন করা যায়নি')
     } finally {

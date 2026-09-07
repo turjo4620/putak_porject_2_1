@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, NavLink } from 'react-router-dom'
-import { Search, Heart, ShoppingBag, User, Menu, X, Sun, Moon, Trash2, ArrowRight } from 'lucide-react'
+import { Search, Heart, ShoppingBag, User, Menu, X, Sun, Moon, Trash2, ArrowRight,
+         Package, Star, LogOut } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './Navigation.css'
 
@@ -153,9 +154,9 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               <button
                 className="nav__signin-btn"
                 onClick={() => navigate('/login')}
-                aria-label="Sign In"
+                aria-label="লগইন করুন"
               >
-                Sign In
+                লগইন
               </button>
             )}
 
@@ -300,30 +301,56 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
         <div className="user-drawer">
           {authUser ? (
             <>
-              <div className="user-drawer__avatar">{(authUser.name || authUser.email || 'U').slice(0,1)}</div>
-              <p className="user-drawer__name">{authUser.name || authUser.email}</p>
+              {/* ── Profile header ── */}
+              <div className="user-drawer__profile">
+                <div className="user-drawer__avatar">
+                  {(authUser.name || authUser.email || 'U').slice(0,1).toUpperCase()}
+                </div>
+                <div className="user-drawer__profile-info">
+                  <p className="user-drawer__name">
+                    {authUser.name || authUser.email}
+                  </p>
+                  {(authUser.email || authUser.phone) && (
+                    <p className="user-drawer__contact">
+                      {authUser.email || authUser.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Nav links ── */}
               <div className="user-drawer__links">
                 {[
-                  { label: 'Account Info', to: '/account/info' },
-                  { label: 'Orders & Tracking', to: '/account/orders' },
-                  { label: 'Rating & Reviews', to: '/account/reviews' },
-                  { label: 'Wishlist', to: '/account/wishlist' },
-                ].map((l) => (
+                  { label: 'আমার প্রোফাইল',      to: '/account/info',     icon: User    },
+                  { label: 'অর্ডার ও ট্র্যাকিং', to: '/account/orders',   icon: Package },
+                  { label: 'পছন্দের তালিকা',      to: '/account/wishlist', icon: Heart   },
+                  { label: 'রিভিউ ও রেটিং',       to: '/account/reviews',  icon: Star    },
+                ].map(({ label, to, icon: Icon }) => (
                   <Link
-                    key={l.label}
-                    to={l.to}
+                    key={to}
+                    to={to}
                     className="user-drawer__link"
                     onClick={() => setUserOpen(false)}
                   >
-                    {l.label} <ArrowRight size={14} />
+                    <span className="user-drawer__link-inner">
+                      <Icon size={16} className="user-drawer__link-icon" strokeWidth={1.8} />
+                      {label}
+                    </span>
+                    <ArrowRight size={14} className="user-drawer__link-arrow" />
                   </Link>
                 ))}
+
+                {/* Divider before logout */}
+                <div className="user-drawer__divider" />
 
                 <button
                   className="user-drawer__link user-drawer__link--signout"
                   onClick={() => { signOut(); setUserOpen(false); navigate('/') }}
                 >
-                  Sign out <ArrowRight size={14} />
+                  <span className="user-drawer__link-inner">
+                    <LogOut size={16} className="user-drawer__link-icon" strokeWidth={1.8} />
+                    লগআউট
+                  </span>
                 </button>
               </div>
             </>
@@ -333,10 +360,8 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
               <p className="user-drawer__name">অতিথি পাঠক</p>
               <div className="user-drawer__links">
                 {[
-                  { label: 'লগইন করুন',      to: '/login' },
-                  { label: 'নিবন্ধন করুন',   to: '/register' },
-                  { label: 'আমার অর্ডার',    to: '/orders' },
-                  { label: 'সেটিংস',         to: '/settings' },
+                  { label: 'লগইন করুন',    to: '/login' },
+                  { label: 'নিবন্ধন করুন', to: '/register' },
                 ].map((l) => (
                   <Link
                     key={l.label}
@@ -344,7 +369,8 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
                     className="user-drawer__link"
                     onClick={() => setUserOpen(false)}
                   >
-                    {l.label} <ArrowRight size={14} />
+                    <span className="user-drawer__link-inner">{l.label}</span>
+                    <ArrowRight size={14} className="user-drawer__link-arrow" />
                   </Link>
                 ))}
               </div>
@@ -366,24 +392,24 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           {/* User section */}
           {authUser ? (
             <div className="nav__drawer-user">
-              <div className="nav__drawer-user-avatar">{(authUser.name || authUser.email || 'U').slice(0,1)}</div>
+              <div className="nav__drawer-user-avatar">{(authUser.name || authUser.email || 'U').slice(0,1).toUpperCase()}</div>
               <div className="nav__drawer-user-info">
                 <p className="nav__drawer-user-name">{authUser.name || authUser.email}</p>
                 <Link to="/account/info" className="nav__drawer-user-link" onClick={() => setMobileOpen(false)}>
-                  View Profile
+                  প্রোফাইল দেখুন
                 </Link>
               </div>
             </div>
           ) : (
             <div className="nav__drawer-signin">
-              <button 
+              <button
                 className="nav__drawer-signin-btn"
                 onClick={() => { setMobileOpen(false); navigate('/login') }}
               >
-                Sign In
+                লগইন করুন
               </button>
               <p className="nav__drawer-signin-text">
-                New user? <Link to="/register" onClick={() => setMobileOpen(false)}>Sign Up</Link>
+                নতুন ব্যবহারকারী? <Link to="/register" onClick={() => setMobileOpen(false)}>নিবন্ধন করুন</Link>
               </p>
             </div>
           )}
@@ -404,10 +430,10 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
           {authUser && (
             <div className="nav__drawer-account-links">
               <Link to="/account/orders" className="nav__drawer-link" onClick={() => setMobileOpen(false)}>
-                Orders & Tracking
+                অর্ডার ও ট্র্যাকিং
               </Link>
               <Link to="/account/wishlist" className="nav__drawer-link" onClick={() => setMobileOpen(false)}>
-                Wishlist
+                পছন্দের তালিকা
               </Link>
             </div>
           )}
@@ -421,7 +447,7 @@ export default function Navigation({ isDarkMode, toggleDarkMode }) {
                 className="nav__drawer-signout-btn"
                 onClick={() => { signOut(); setMobileOpen(false); navigate('/') }}
               >
-                Sign Out
+                লগআউট
               </button>
             )}
           </div>

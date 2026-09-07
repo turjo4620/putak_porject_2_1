@@ -31,6 +31,7 @@ import AccountOrders          from './pages/AccountOrders'
 import AccountWishlist        from './pages/AccountWishlist'
 import AccountReviews         from './pages/AccountReviews'
 import PaymentPage            from './pages/PaymentPage'
+import OrderSuccessPage       from './pages/OrderSuccessPage'
 
 // Import Admin components
 import AdminLogin from './pages/admin/AdminLogin.jsx'
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/cart"              element={<CartPage />} />
             <Route path="/checkout"          element={<CheckoutPage />} />
             <Route path="/payment/:orderId"  element={<PaymentPage />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
             <Route path="/login"             element={<LoginPage />} />
             <Route path="/register"          element={<RegisterPage />} />
             

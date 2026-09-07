@@ -410,7 +410,7 @@
   flex-shrink: 0;
 }
 .side-drawer__title {
-  font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700;
+  font-family: var(--font-sans); font-size: 0.95rem; font-weight: 700;
   color: var(--text-primary);
 }
 .side-drawer__close {
@@ -518,36 +518,134 @@
 .drawer__checkout:hover { background: var(--color-charcoal-80); transform: translateY(-1px); }
 [data-theme="dark"] .drawer__checkout { background: var(--color-cream); color: var(--color-charcoal); }
 
-/* User drawer */
+/* ── User Drawer ─────────────────────────────────────────────────────────── */
 .user-drawer {
-  display: flex; flex-direction: column; align-items: center;
-  padding: var(--space-6) 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0 var(--space-4);
+}
+
+/* Profile header row */
+.user-drawer__profile {
+  display: flex;
+  align-items: center;
   gap: var(--space-4);
+  padding: var(--space-4) var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--space-3);
 }
+
 .user-drawer__avatar {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-forest), var(--color-forest-light));
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-serif); font-size: 1.8rem; font-weight: 900; color: white;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-forest, #1e3a2f), var(--color-forest-light, #2d6a4f));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
 }
+
+.user-drawer__profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .user-drawer__name {
-  font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
+
+.user-drawer__contact {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* Nav link list */
 .user-drawer__links {
-  width: 100%; display: flex; flex-direction: column; gap: var(--space-1);
-  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
+
 .user-drawer__link {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  font-family: var(--font-sans); font-size: 0.95rem; font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-radius: 9px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
-.user-drawer__link:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.user-drawer__link:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.user-drawer__link-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.user-drawer__link-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.user-drawer__link:hover .user-drawer__link-icon {
+  opacity: 1;
+}
+
+.user-drawer__link-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* Divider above logout */
+.user-drawer__divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--space-2) var(--space-1);
+}
+
+/* Logout — red destructive style */
+.user-drawer__link--signout {
+  color: #dc2626;
+  margin-top: 2px;
+}
+.user-drawer__link--signout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.user-drawer__link--signout .user-drawer__link-icon {
+  opacity: 0.85;
+}
 
 /* ── Search Modal ── */
 .search-modal {
