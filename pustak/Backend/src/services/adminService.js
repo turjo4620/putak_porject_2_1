@@ -488,7 +488,13 @@ class AdminService {
       WHERE oi.order_id = $1
     `, [orderId]);
 
-    const deliveryResult = await pool.query(`SELECT * FROM deliveries WHERE order_id = $1`, [orderId]);
+    const deliveryResult = await pool.query(
+      `SELECT d.*, c.name AS courier_name
+       FROM deliveries d
+       LEFT JOIN courier c ON d.courier_id = c.courier_id
+       WHERE d.order_id = $1`,
+      [orderId]
+    );
     const paymentResult  = await pool.query(`SELECT * FROM payments WHERE order_id = $1`, [orderId]);
 
     return {

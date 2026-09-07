@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { api } from '../api/http'
+import { useApp } from '../context/AppContext'
 import './PaymentPage.css'
 
 // ── Bengali numeral helper ──────────────────────────────────────
@@ -75,6 +76,7 @@ const METHODS = [
 export default function PaymentPage() {
   const { orderId } = useParams()
   const navigate    = useNavigate()
+  const { fetchCart } = useApp()
 
   const [order, setOrder]         = useState(null)
   const [orderItems, setOrderItems] = useState([])
@@ -100,6 +102,7 @@ export default function PaymentPage() {
     setSubmitting(true)
     try {
       await api.post(`/payments/${orderId}`, { method, ...form })
+      await fetchCart()  // now refresh cart from DB — it's empty after order was placed
       navigate('/account/orders')
     } catch (err) {
       setError(err.message || 'পেমেন্ট সম্পন্ন করা যায়নি')

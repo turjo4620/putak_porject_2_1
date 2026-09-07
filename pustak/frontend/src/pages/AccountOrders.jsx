@@ -98,10 +98,10 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
                 <tbody>
                   {delivery.tracking_no   && <tr><td>ট্র্যাকিং নম্বর</td><td><strong>{delivery.tracking_no}</strong></td></tr>}
                   {delivery.courier_name  && <tr><td>কুরিয়ার</td><td>{delivery.courier_name}</td></tr>}
-                  {delivery.delivered_via && <tr><td>ডেলিভারি মাধ্যম</td><td>{delivery.delivered_via}</td></tr>}
                   {delivery.dispatch_date && <tr><td>প্রেরণের তারিখ</td><td>{new Date(delivery.dispatch_date).toLocaleDateString('bn-BD')}</td></tr>}
                   {delivery.est_date      && <tr><td>আনুমানিক ডেলিভারি</td><td>{new Date(delivery.est_date).toLocaleDateString('bn-BD')}</td></tr>}
                   {delivery.delivered_at  && <tr><td>ডেলিভারির তারিখ</td><td>{new Date(delivery.delivered_at).toLocaleDateString('bn-BD')}</td></tr>}
+                  {delivery.delivery_charge && <tr><td>ডেলিভারি চার্জ</td><td>৳{delivery.delivery_charge}</td></tr>}
                   <tr><td>ডেলিভারি অবস্থা</td><td>{delivery.status || '—'}</td></tr>
                 </tbody>
               </table>

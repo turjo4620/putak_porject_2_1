@@ -199,10 +199,12 @@ async function getTrackingInfo(userId, orderId) {
   }
 
   const deliveryRes = await pool.query(
-    `SELECT delivery_id, tracking_no, delivered_via,
-            dispatch_date, est_date, delivered_at, status
-     FROM deliveries
-     WHERE order_id = $1`,
+    `SELECT d.delivery_id, d.tracking_no, d.dispatch_date,
+            d.est_date, d.delivered_at, d.status,
+            d.delivery_charge, c.name AS courier_name
+     FROM deliveries d
+     LEFT JOIN courier c ON d.courier_id = c.courier_id
+     WHERE d.order_id = $1`,
     [orderId]
   );
 

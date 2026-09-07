@@ -308,10 +308,17 @@ export default function AdminOrders() {
               {selectedOrder.delivery && (
                 <div className="details-section">
                   <h3>Delivery</h3>
-                  <p><strong>Tracking:</strong> {selectedOrder.delivery.tracking_no}</p>
+                  {selectedOrder.delivery.courier_name && <p><strong>কুরিয়ার:</strong> {selectedOrder.delivery.courier_name}</p>}
+                  {selectedOrder.delivery.tracking_no && <p><strong>Tracking:</strong> {selectedOrder.delivery.tracking_no}</p>}
                   <p><strong>Status:</strong> {selectedOrder.delivery.status}</p>
                   {selectedOrder.delivery.dispatch_date && (
                     <p><strong>Dispatched:</strong> {new Date(selectedOrder.delivery.dispatch_date).toLocaleString()}</p>
+                  )}
+                  {selectedOrder.delivery.est_date && (
+                    <p><strong>Est. Delivery:</strong> {new Date(selectedOrder.delivery.est_date).toLocaleString()}</p>
+                  )}
+                  {selectedOrder.delivery.delivered_at && (
+                    <p><strong>Delivered:</strong> {new Date(selectedOrder.delivery.delivered_at).toLocaleString()}</p>
                   )}
                 </div>
               )}
