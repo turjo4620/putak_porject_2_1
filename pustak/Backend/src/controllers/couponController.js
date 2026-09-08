@@ -3,11 +3,12 @@ const couponService = require('../services/couponService');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC  POST /api/coupons/validate
-// Used by CheckoutPage to verify a code before placing the order.
+// Used by CheckoutPage before placing an order.
+// Body: { code, orderSubtotal }
 // ─────────────────────────────────────────────────────────────────────────────
 const validateCoupon = async (req, res) => {
   try {
-    const { code, orderSubtotal, userId } = req.body;
+    const { code, orderSubtotal } = req.body;
 
     if (!code) {
       return res.status(400).json({ success: false, message: 'কুপন কোড দিন' });
@@ -15,8 +16,7 @@ const validateCoupon = async (req, res) => {
 
     const { coupon, discount_amount } = await couponService.validateCoupon(
       code,
-      Number(orderSubtotal) || 0,
-      userId || null
+      Number(orderSubtotal) || 0
     );
 
     return res.status(200).json({
@@ -38,50 +38,53 @@ const validateCoupon = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN  GET /api/coupons/admin
-// Returns all coupons with usage stats.
+// Query params: ?search=CODE  ?status=active|inactive|expired
 // ─────────────────────────────────────────────────────────────────────────────
 const getAllCoupons = async (req, res) => {
   try {
     const { search, status } = req.query;
+    const params = [];
 
+    // Base columns — only real columns from the table
     let query = `
       SELECT
-        coupon_id            AS id,
+        coupon_id       AS id,
         code,
         description,
         discount_type,
         discount_value,
-        max_discount,
         min_order_amount,
         max_order_amount,
         usage_limit,
-        per_user_limit,
-        times_used           AS usage_count,
+        times_used      AS usage_count,
         start_date,
         end_date,
-        is_active,
-        created_at
+        status
       FROM coupons
       WHERE 1=1
     `;
-    const params = [];
 
-    if (search) {
-      params.push(`%${search}%`);
-      query += ` AND (UPPER(code) LIKE UPPER($${params.length}) OR description ILIKE $${params.length})`;
+    if (search && search.trim()) {
+      params.push(`%${search.trim()}%`);
+      query += ` AND (UPPER(code) LIKE UPPER($${params.length})
+                   OR description ILIKE $${params.length})`;
     }
 
+    // Map frontend status filter → SQL conditions on the real columns
     if (status && status !== 'all') {
       if (status === 'active') {
-        query += ` AND is_active = true AND (end_date IS NULL OR end_date >= NOW()) AND (start_date IS NULL OR start_date <= NOW())`;
+        query += ` AND status = 'Active'
+                   AND (start_date IS NULL OR start_date <= NOW())
+                   AND (end_date   IS NULL OR end_date   >= NOW())
+                   AND (usage_limit IS NULL OR times_used < usage_limit)`;
       } else if (status === 'inactive') {
-        query += ` AND is_active = false`;
+        query += ` AND status = 'Inactive'`;
       } else if (status === 'expired') {
         query += ` AND end_date IS NOT NULL AND end_date < NOW()`;
       }
     }
 
-    query += ` ORDER BY created_at DESC`;
+    query += ` ORDER BY coupon_id DESC`;
 
     const result = await pool.query(query, params);
     return res.json(result.rows);
@@ -92,59 +95,58 @@ const getAllCoupons = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN  POST /api/coupons/admin
-// Create a new coupon.
+// ADMIN  POST /api/coupons/admin  — create a coupon
 // ─────────────────────────────────────────────────────────────────────────────
 const createCoupon = async (req, res) => {
   try {
     const {
       code, description,
-      discount_type, discount_value, max_discount,
+      discount_type, discount_value,
       min_order_amount, max_order_amount,
-      usage_limit, per_user_limit,
+      usage_limit,
       start_date, end_date,
-      is_active,
+      status,             // 'Active' | 'Inactive'
     } = req.body;
 
     if (!code || !discount_value) {
       return res.status(400).json({ message: 'code and discount_value are required' });
     }
 
-    // Check duplicate
+    // Duplicate check
     const dup = await pool.query(
       `SELECT coupon_id FROM coupons WHERE UPPER(code) = UPPER($1)`,
       [code.trim()]
     );
     if (dup.rows.length) {
-      return res.status(409).json({ message: `Coupon code "${code.toUpperCase()}" already exists` });
+      return res.status(409).json({
+        message: `Coupon code "${code.trim().toUpperCase()}" already exists`,
+      });
     }
 
     const result = await pool.query(
       `INSERT INTO coupons
-         (code, description, discount_type, discount_value, max_discount,
+         (code, description, discount_type, discount_value,
           min_order_amount, max_order_amount,
-          usage_limit, per_user_limit, times_used,
-          start_date, end_date, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12)
+          usage_limit, times_used,
+          start_date, end_date, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8, $9, $10)
        RETURNING
          coupon_id AS id, code, description,
-         discount_type, discount_value, max_discount,
+         discount_type, discount_value,
          min_order_amount, max_order_amount,
-         usage_limit, per_user_limit, times_used AS usage_count,
-         start_date, end_date, is_active, created_at`,
+         usage_limit, times_used AS usage_count,
+         start_date, end_date, status`,
       [
         code.trim().toUpperCase(),
-        description    || null,
-        discount_type  || 'flat',
+        description         || null,
+        discount_type       || 'flat',
         Number(discount_value),
-        max_discount         ? Number(max_discount)         : null,
-        min_order_amount     ? Number(min_order_amount)     : 0,
-        max_order_amount     ? Number(max_order_amount)     : null,
-        usage_limit          ? Number(usage_limit)          : null,
-        per_user_limit       ? Number(per_user_limit)       : 1,
-        start_date  || null,
-        end_date    || null,
-        is_active !== false,
+        min_order_amount    ? Number(min_order_amount)  : null,
+        max_order_amount    ? Number(max_order_amount)  : null,
+        usage_limit         ? Number(usage_limit)       : null,
+        start_date          || null,
+        end_date            || null,
+        status              === 'Inactive' ? 'Inactive' : 'Active',
       ]
     );
 
@@ -156,66 +158,64 @@ const createCoupon = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADMIN  PUT /api/coupons/admin/:id
-// Update an existing coupon.
+// ADMIN  PUT /api/coupons/admin/:id  — update a coupon
 // ─────────────────────────────────────────────────────────────────────────────
 const updateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
     const {
       code, description,
-      discount_type, discount_value, max_discount,
+      discount_type, discount_value,
       min_order_amount, max_order_amount,
-      usage_limit, per_user_limit,
+      usage_limit,
       start_date, end_date,
-      is_active,
+      status,
     } = req.body;
 
-    // Check code uniqueness (excluding this record)
+    // Duplicate code check (excluding this row)
     if (code) {
       const dup = await pool.query(
-        `SELECT coupon_id FROM coupons WHERE UPPER(code) = UPPER($1) AND coupon_id != $2`,
+        `SELECT coupon_id FROM coupons
+         WHERE UPPER(code) = UPPER($1) AND coupon_id != $2`,
         [code.trim(), id]
       );
       if (dup.rows.length) {
-        return res.status(409).json({ message: `Coupon code "${code.toUpperCase()}" already exists` });
+        return res.status(409).json({
+          message: `Coupon code "${code.trim().toUpperCase()}" already exists`,
+        });
       }
     }
 
     const result = await pool.query(
       `UPDATE coupons SET
-         code              = COALESCE(UPPER($1), code),
-         description       = $2,
-         discount_type     = COALESCE($3, discount_type),
-         discount_value    = COALESCE($4, discount_value),
-         max_discount      = $5,
-         min_order_amount  = COALESCE($6, min_order_amount),
-         max_order_amount  = $7,
-         usage_limit       = $8,
-         per_user_limit    = COALESCE($9, per_user_limit),
-         start_date        = $10,
-         end_date          = $11,
-         is_active         = COALESCE($12, is_active)
-       WHERE coupon_id = $13
+         code             = COALESCE(NULLIF(UPPER($1), ''), code),
+         description      = $2,
+         discount_type    = COALESCE(NULLIF($3, ''), discount_type),
+         discount_value   = COALESCE($4, discount_value),
+         min_order_amount = $5,
+         max_order_amount = $6,
+         usage_limit      = $7,
+         start_date       = $8,
+         end_date         = $9,
+         status           = COALESCE(NULLIF($10, ''), status)
+       WHERE coupon_id = $11
        RETURNING
          coupon_id AS id, code, description,
-         discount_type, discount_value, max_discount,
+         discount_type, discount_value,
          min_order_amount, max_order_amount,
-         usage_limit, per_user_limit, times_used AS usage_count,
-         start_date, end_date, is_active, created_at`,
+         usage_limit, times_used AS usage_count,
+         start_date, end_date, status`,
       [
-        code             ? code.trim().toUpperCase() : null,
+        code             ? code.trim().toUpperCase() : '',
         description      ?? null,
-        discount_type    || null,
-        discount_value   ? Number(discount_value)    : null,
-        max_discount     ? Number(max_discount)       : null,
-        min_order_amount ? Number(min_order_amount)   : null,
-        max_order_amount ? Number(max_order_amount)   : null,
-        usage_limit      ? Number(usage_limit)        : null,
-        per_user_limit   ? Number(per_user_limit)     : null,
+        discount_type    || '',
+        discount_value   ? Number(discount_value)   : null,
+        min_order_amount ? Number(min_order_amount) : null,
+        max_order_amount ? Number(max_order_amount) : null,
+        usage_limit      ? Number(usage_limit)      : null,
         start_date       || null,
         end_date         || null,
-        is_active !== undefined ? is_active : null,
+        status           || '',
         id,
       ]
     );
@@ -233,7 +233,6 @@ const updateCoupon = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN  DELETE /api/coupons/admin/:id
-// Hard-delete a coupon.
 // ─────────────────────────────────────────────────────────────────────────────
 const deleteCoupon = async (req, res) => {
   try {
