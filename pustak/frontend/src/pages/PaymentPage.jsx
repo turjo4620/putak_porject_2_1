@@ -98,7 +98,17 @@ export default function PaymentPage() {
     try {
       await api.post(`/payments/${orderId}`, { method, ...form })
       await fetchCart()  // re-sync cart from DB (now empty after order placed)
-      navigate('/account/orders')
+      // Navigate to the Thank You / Order Success page with payment context
+      navigate(`/order-success/${orderId}`, {
+        state: {
+          order,
+          items: orderItems,
+          method,
+          providerName: form.providerName || null,
+          cardBrand:    form.cardBrand    || null,
+          cardLast4:    form.cardLast4    || null,
+        },
+      })
     } catch (err) {
       setError(err.message || 'পেমেন্ট সম্পন্ন করা যায়নি')
     } finally {

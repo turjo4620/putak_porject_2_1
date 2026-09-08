@@ -8,10 +8,13 @@
 .list-page__header {
   margin-bottom: var(--space-10);
 }
+
 .list-page__breadcrumb {
-  font-size: 0.82rem; color: var(--text-muted);
+  font-size: 0.82rem;
+  color: var(--text-muted);
   font-family: var(--font-sans);
-  margin-bottom: var(--space-4);
+  /* my-2 equivalent between breadcrumb and title */
+  margin-bottom: var(--space-2);
   display: flex; align-items: center; gap: var(--space-2);
   flex-wrap: wrap;
 }
@@ -21,24 +24,49 @@
 }
 .list-page__breadcrumb a:hover { color: var(--accent); }
 
+/* Active nav link inside breadcrumb / top nav */
+.list-page__breadcrumb .active,
+.list-page__nav-link--active {
+  color: var(--accent);
+  font-weight: 600;
+  /* balanced horizontal + vertical padding */
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  line-height: 1.5;
+}
+
 .list-page__icon {
   font-size: 2rem; margin-right: var(--space-2);
 }
+
 .list-page__title {
   font-family: var(--font-serif);
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800; color: var(--text-primary);
-  line-height: 1.15; margin-bottom: var(--space-2);
+  line-height: 1.15;
+  /* my-2: vertical margin separating breadcrumb above and subtitle below */
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
   display: flex; align-items: center;
 }
+
 .list-page__subtitle {
-  font-size: 1rem; color: var(--text-secondary);
-  font-family: var(--font-sans); margin-bottom: var(--space-2);
-}
-.list-page__count {
-  font-size: 0.88rem; color: var(--text-muted); font-family: var(--font-sans);
+  font-size: 1rem;
+  /* darkened to zinc-600 equivalent for legibility */
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  margin-bottom: var(--space-2);
 }
 
+.list-page__count {
+  font-size: 0.88rem;
+  /* also use text-secondary (zinc-600 level) for the subtitle/count */
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+/* ── Grid — used by pages without sidebar ── */
 .list-page__grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -48,12 +76,21 @@
 @media (max-width: 860px)  { .list-page__grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 600px)  { .list-page__grid { grid-template-columns: repeat(2, 1fr); } }
 
+/* When inside a sidebar layout (BestSellersPage), fewer columns fit */
+.bsp__content .list-page__grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 1200px) { .bsp__content .list-page__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { .bsp__content .list-page__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 680px)  { .bsp__content .list-page__grid { grid-template-columns: repeat(2, 1fr); } }
+
 .list-page__empty {
   display: flex; flex-direction: column; align-items: center;
   gap: var(--space-5); padding: var(--space-20) 0;
   font-family: var(--font-sans); color: var(--text-secondary);
   text-align: center;
 }
+
 .list-page__back-btn {
   padding: var(--space-2) var(--space-6);
   background: var(--accent); color: white;

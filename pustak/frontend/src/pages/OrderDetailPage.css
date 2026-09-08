@@ -1,0 +1,667 @@
+/* ═══════════════════════════════════════════════════════════════
+   OrderDetailPage  —  /account/orders/:orderId
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Page shell ────────────────────────────────────────────────── */
+.odp {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #111827;
+  min-height: 60vh;
+}
+
+/* Content column — reuses account-content-wrapper's context */
+.odp__wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Loading / error center */
+.odp__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 0;
+  text-align: center;
+}
+.odp__spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: odp-spin 0.7s linear infinite;
+}
+@keyframes odp-spin { to { transform: rotate(360deg); } }
+.odp__loading-text { font-size: 0.9rem; color: #6b7280; }
+.odp__error { color: #991b1b; font-size: 0.9rem; }
+
+/* ── Back link ─────────────────────────────────────────────────── */
+.odp__back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f766e;
+  text-decoration: none;
+  transition: color 0.15s, gap 0.15s;
+  width: fit-content;
+  padding: 2px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.odp__back-link:hover {
+  color: #065f46;
+  gap: 8px;
+}
+
+/* ── Shared card ───────────────────────────────────────────────── */
+/* .card is defined in account-dashboard.css; we only override here */
+.odp__wrap .card {
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+/* ── Section title ─────────────────────────────────────────────── */
+.odp__section-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.odp__section-icon { color: #6b7280; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════════════
+   HEADER CARD
+══════════════════════════════════════════════════════════════════ */
+.odp__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.odp__header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Order ID row */
+.odp__id-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.odp__id-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.odp__id-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.odp__id-value {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+/* Copy button */
+.odp__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.odp__copy-btn:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: #f0fdf4;
+}
+.odp__copy-done { color: #16a34a; }
+
+/* Date + status row */
+.odp__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.odp__date {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+.odp__status-pill {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Header action buttons */
+.odp__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.odp__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.odp__action-btn--outline {
+  border: 1.5px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+}
+.odp__action-btn--outline:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: #f0fdf4;
+}
+.odp__action-btn--ghost {
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+}
+.odp__action-btn--ghost:hover {
+  border-color: #d1d5db;
+  color: #374151;
+  background: #f3f4f6;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   STEPPER
+══════════════════════════════════════════════════════════════════ */
+.odp__steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+/* Each step column */
+.odp__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Connector line — sits between the two nodes, drawn as an absolutely-
+   positioned element anchored to the step's left edge */
+.odp__step-line {
+  position: absolute;
+  top: 20px;                  /* vertically centred on the 40px node */
+  right: 50%;
+  left: calc(-50%);           /* spans from prev node centre to this node */
+  height: 2px;
+  background: #e5e7eb;
+  z-index: 0;
+  transition: background 0.3s;
+}
+.odp__step-line--done { background: #16a34a; }
+
+/* Node circle */
+.odp__step-node {
+  position: relative;
+  z-index: 1;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition: all 0.25s;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+/* Done state */
+.odp__step--done .odp__step-node {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+/* Active (current) state */
+.odp__step--active .odp__step-node {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+}
+
+.odp__step-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+}
+.odp__step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.3;
+}
+.odp__step--done .odp__step-label  { color: #065f46; }
+.odp__step--active .odp__step-label { color: #1e40af; }
+
+.odp__step-sub {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  line-height: 1.3;
+  max-width: 100px;
+  word-break: break-word;
+}
+.odp__step--done .odp__step-sub   { color: #6b7280; }
+
+/* ══════════════════════════════════════════════════════════════════
+   ITEMS TABLE
+══════════════════════════════════════════════════════════════════ */
+.odp__table-wrap {
+  overflow-x: auto;
+  margin: 0 -0.25rem;
+}
+
+.odp__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 480px;
+}
+
+.odp__th {
+  padding: 0.55rem 0.75rem;
+  background: #f9fafb;
+  border-bottom: 1.5px solid #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.odp__th--book   { text-align: left; width: 55%; }
+.odp__th--num    { text-align: right; }
+.odp__th--action { width: 110px; }
+
+.odp__tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+.odp__tr:last-child { border-bottom: none; }
+.odp__tr:hover { background: #fafafa; }
+
+.odp__td {
+  padding: 0.8rem 0.75rem;
+  vertical-align: middle;
+  color: #374151;
+}
+.odp__td--book  { width: 55%; }
+.odp__td--num   { text-align: right; white-space: nowrap; }
+.odp__td--total { font-weight: 700; color: #111827; }
+.odp__td--action { text-align: right; }
+
+/* Book cell inner layout */
+.odp__item-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.odp__thumb-wrap {
+  width: 50px; height: 70px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+.odp__thumb {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.odp__thumb-placeholder {
+  width: 100%; height: 100%;
+  background: #f3f4f6;
+}
+
+.odp__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.odp__item-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+  text-decoration: none;
+  line-height: 1.35;
+  transition: color 0.12s;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.odp__item-title:hover { color: #0f766e; }
+.odp__item-author {
+  font-size: 0.78rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Review button (shown post-delivery) */
+.odp__review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1.5px solid #fbbf24;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.odp__review-btn:hover {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TWO-COLUMN INFO GRID
+══════════════════════════════════════════════════════════════════ */
+.odp__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.odp__info-card {
+  height: 100%;
+}
+
+/* Key-value rows */
+.odp__info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.odp__info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.odp__info-label {
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.odp__info-value {
+  color: #374151;
+  text-align: right;
+  word-break: break-word;
+}
+.odp__info-value--strong { font-weight: 700; color: #111827; }
+.odp__info-value--mono   { font-family: monospace; font-size: 0.8rem; }
+
+.odp__info-empty {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Payment status pill */
+.odp__pay-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.odp__pay-status--paid {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+.odp__pay-status--due {
+  background: #fff8e1;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Cost divider */
+.odp__cost-divider {
+  height: 1px;
+  background: #f3f4f6;
+  margin: 0.85rem 0;
+}
+
+/* Cost breakdown rows */
+.odp__cost-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.odp__cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+.odp__cost-row--discount {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+/* Grand total */
+.odp__cost-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+.odp__cost-total span { color: #374151; font-weight: 600; }
+.odp__cost-total strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FOOTER ACTIONS
+══════════════════════════════════════════════════════════════════ */
+.odp__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 0 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.odp__footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.odp__footer-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Reorder — primary */
+.odp__footer-btn--reorder {
+  background: #0f766e;
+  color: #fff;
+  border: 2px solid #0f766e;
+}
+.odp__footer-btn--reorder:hover:not(:disabled) {
+  background: #0d6560;
+  border-color: #0d6560;
+  transform: translateY(-1px);
+}
+
+/* Cancel — destructive text */
+.odp__footer-btn--cancel {
+  background: none;
+  border: 1.5px solid #fca5a5;
+  color: #dc2626;
+}
+.odp__footer-btn--cancel:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+/* Back — ghost */
+.odp__footer-btn--back {
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  color: #6b7280;
+  margin-left: auto;     /* push to right when cancel/reorder are present */
+}
+.odp__footer-btn--back:hover {
+  border-color: #d1d5db;
+  color: #374151;
+  background: #f9fafb;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════════════ */
+@media (max-width: 780px) {
+  .odp__info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .odp__header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .odp__header-actions {
+    width: 100%;
+  }
+  .odp__action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .odp__steps {
+    flex-direction: column;
+    gap: 0;
+    align-items: flex-start;
+  }
+
+  /* Vertical stepper on small screens */
+  .odp__step {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+    width: 100%;
+  }
+  .odp__step:last-child { padding-bottom: 0; }
+
+  /* Vertical connector line */
+  .odp__step-line {
+    left: 19px;          /* centre of 40px node */
+    right: auto;
+    top: 42px;           /* bottom edge of node */
+    width: 2px;
+    height: calc(100% - 2px);
+  }
+
+  .odp__step-node { margin-bottom: 0; flex-shrink: 0; }
+
+  .odp__step-info {
+    align-items: flex-start;
+    padding-top: 10px;
+  }
+
+  .odp__footer-actions { flex-direction: column; }
+  .odp__footer-btn     { width: 100%; justify-content: center; }
+  .odp__footer-btn--back { margin-left: 0; }
+
+  .odp__wrap .card { padding: 1rem; }
+}

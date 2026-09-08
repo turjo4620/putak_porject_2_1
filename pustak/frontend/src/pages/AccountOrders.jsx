@@ -290,7 +290,7 @@ export default function AccountOrders() {
               </button>
               <button
                 className="order-btn order-btn--outline"
-                onClick={() => navigate(`/payment/${order.order_id}`)}
+                onClick={() => navigate(`/account/orders/${order.order_id}`)}
               >
                 বিস্তারিত দেখুন
               </button>

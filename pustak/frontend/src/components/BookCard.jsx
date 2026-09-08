@@ -4,6 +4,14 @@ import { Heart, ShoppingBag, Eye, Star } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import './BookCard.css'
 
+// ── Bengali numeral helpers ──────────────────────────────────────
+const toBn = (n) => String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d])
+const fmtPrice = (n) => {
+  const num = Number(n)
+  // Drop trailing .00 for round numbers
+  return toBn(Number.isInteger(num) ? String(num) : num.toFixed(2))
+}
+
 export default function BookCard({ book, size = 'default' }) {
   const navigate = useNavigate()
   const { addToCart, toggleWish, isWished, authUser } = useApp()
@@ -13,32 +21,29 @@ export default function BookCard({ book, size = 'default' }) {
   // ---------------------------------------------------------
   // DATABASE DATA MAPPING & FALLBACKS
   // ---------------------------------------------------------
-  const bookId = book.id;
-  const title = book.book_name || book.title || 'শিরোনাম নেই';
-  const cover = book.cover_image_url || book.cover;
-  const author = book.author || 'অজ্ঞাত';
-  const price = book.price || 0;
-
-  const category = book.category || null;
-  const rating = book.rating || 0;
-  const reviews = book.reviews || 0;
-  const inStock = book.inStock !== false;
-  const originalPrice = book.originalPrice || null;
-  const discount = book.discount || 0;
-  const badge = book.badge || null;
-  const badgeColor = book.badgeColor || '#000';
+  const bookId        = book.id
+  const title         = book.book_name || book.title || 'শিরোনাম নেই'
+  const cover         = book.cover_image_url || book.cover
+  const author        = book.author || 'অজ্ঞাত'
+  const price         = book.price || 0
+  const category      = book.category || null
+  const rating        = Number(book.rating) || 0
+  const reviews       = Number(book.reviews) || 0
+  const inStock       = book.inStock !== false
+  const originalPrice = book.originalPrice || null
+  const discount      = book.discount || 0
+  const badge         = book.badge || null
+  const badgeColor    = book.badgeColor || '#000'
   // ---------------------------------------------------------
 
   const wished = isWished(bookId)
 
   const handleCart = async (e) => {
     e.stopPropagation()
-
     if (!authUser) {
       navigate('/login')
       return
     }
-
     try {
       setAdding(true)
       await addToCart(book)
@@ -60,6 +65,9 @@ export default function BookCard({ book, size = 'default' }) {
     e.stopPropagation()
     toggleWish(book)
   }
+
+  // Rating display: hide completely when no reviews
+  const hasRating = rating > 0 && reviews > 0
 
   return (
     <article
@@ -88,6 +96,7 @@ export default function BookCard({ book, size = 'default' }) {
             onClick={handlePreview}
           >
             <Eye size={16} />
+            দ্রুত দেখুন
           </button>
           <button
             className={`book-card__action book-card__action--cart ${added ? 'book-card__action--added' : ''}`}
@@ -96,7 +105,7 @@ export default function BookCard({ book, size = 'default' }) {
             disabled={adding}
           >
             <ShoppingBag size={16} />
-            {added ? 'যোগ হয়েছে' : adding ? 'যোগ হচ্ছে...' : 'কার্টে যোগ'}
+            {added ? 'যোগ হয়েছে' : adding ? 'যোগ হচ্ছে...' : 'কার্ট যোগ'}
           </button>
         </div>
 
@@ -112,11 +121,11 @@ export default function BookCard({ book, size = 'default' }) {
         )}
         {discount > 0 && (
           <span className="book-card__discount" aria-label={`${discount}% ছাড়`}>
-            -{discount}%
+            -{toBn(discount)}%
           </span>
         )}
 
-        {/* Wishlist */}
+        {/* Wishlist — top-right corner */}
         <button
           className={`book-card__wish ${wished ? 'book-card__wish--active' : ''}`}
           onClick={handleWish}
@@ -138,24 +147,29 @@ export default function BookCard({ book, size = 'default' }) {
         <h3 className="book-card__title">{title}</h3>
         <p className="book-card__author">{author}</p>
 
-        <div className="book-card__rating" aria-label={`রেটিং: ${rating} এর মধ্যে ৫`}>
-          <span className="book-card__stars" aria-hidden="true">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                size={11}
-                className={i < Math.floor(rating) ? 'star--filled' : 'star--empty'}
-              />
-            ))}
-          </span>
-          <span className="book-card__rating-num">{rating}</span>
-          <span className="book-card__reviews">({reviews.toLocaleString('bn-BD')})</span>
-        </div>
+        {/* Rating: show only when reviews exist, else show নতুন badge */}
+        {hasRating ? (
+          <div className="book-card__rating" aria-label={`রেটিং: ${rating} / ৫`}>
+            <span className="book-card__stars" aria-hidden="true">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={11}
+                  className={i < Math.floor(rating) ? 'star--filled' : 'star--empty'}
+                />
+              ))}
+            </span>
+            <span className="book-card__rating-num">{rating}</span>
+            <span className="book-card__reviews">({toBn(reviews)})</span>
+          </div>
+        ) : (
+          <div className="book-card__new-badge" aria-label="নতুন প্রকাশনা">নতুন</div>
+        )}
 
         <div className="book-card__pricing">
-          <strong className="book-card__price">৳{price}</strong>
+          <strong className="book-card__price">৳{fmtPrice(price)}</strong>
           {originalPrice && (
-            <s className="book-card__original">৳{originalPrice}</s>
+            <s className="book-card__original">৳{fmtPrice(originalPrice)}</s>
           )}
         </div>
       </div>
