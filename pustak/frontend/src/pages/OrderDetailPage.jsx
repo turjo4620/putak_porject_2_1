@@ -3,10 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   ArrowLeft, Copy, Check, Download, Headphones,
   PackageCheck, Package, Truck, MapPin, Star,
-  RotateCcw, XCircle, ChevronRight,
+  RotateCcw, XCircle, CheckCircle2,
 } from 'lucide-react'
 import { api } from '../api/http'
 import { useApp } from '../context/AppContext'
+import { ORDER_STAGES, statusIndex, isStageDone } from '../utils/orderStages'
 import './OrderDetailPage.css'
 
 // ── Bengali helpers ──────────────────────────────────────────────────────
@@ -78,47 +79,57 @@ function methodLabel(method, provider, brand, last4) {
   return method
 }
 
-// ── Step definitions ─────────────────────────────────────────────────────
-function buildSteps(order, delivery) {
-  const s = (order?.status || '').toLowerCase()
-  const reached = (statuses) => statuses.some(x => x === s)
+// ── Step icons (index-matched to ORDER_STAGES) ───────────────────────────
+const STAGE_ICONS = [
+  <Package      size={18} key="placed"    />,   // 0 placed
+  <CheckCircle2 size={18} key="confirmed" />,   // 1 confirmed
+  <PackageCheck size={18} key="packed"    />,   // 2 packed
+  <Truck        size={18} key="shipped"   />,   // 3 shipped
+  <MapPin       size={18} key="delivered" />,   // 4 delivered
+]
 
-  return [
-    {
-      icon: <Package size={18} />,
-      label: 'অর্ডার গৃহীত',
-      sublabel: order?.order_date ? fmtDate(order.order_date) : null,
-      done: true,
-      active: s === 'pending',
-    },
-    {
-      icon: <PackageCheck size={18} />,
-      label: 'প্যাকেজিং সম্পন্ন',
-      sublabel: reached(['confirmed','paid','processing','shipped','delivered']) ? 'নিশ্চিত করা হয়েছে' : 'অপেক্ষমাণ',
-      done: reached(['confirmed','paid','processing','shipped','delivered']),
-      active: reached(['confirmed','paid','processing']),
-    },
-    {
-      icon: <Truck size={18} />,
-      label: 'কুরিয়ারে হস্তান্তর',
-      sublabel: delivery?.courier_name
-        ? delivery.courier_name + (delivery.tracking_no ? ` · ${delivery.tracking_no}` : '')
-        : reached(['shipped','delivered']) ? 'শিপড' : 'অপেক্ষমাণ',
-      done: reached(['shipped','delivered']),
-      active: s === 'shipped',
-    },
-    {
-      icon: <MapPin size={18} />,
-      label: 'ডেলিভার্ড',
-      sublabel: delivery?.delivered_at
-        ? fmtDate(delivery.delivered_at)
-        : delivery?.est_date
-          ? `আনু. ${fmtDate(delivery.est_date)}`
-          : 'অপেক্ষমাণ',
-      done: reached(['delivered']),
-      active: s === 'delivered',
-    },
-  ]
+// ── Build stepper data from ORDER_STAGES + live order/delivery data ───────
+function buildSteps(order, delivery) {
+  const currentIdx = statusIndex(order?.status)
+
+  return ORDER_STAGES.map((stage, i) => {
+    const done   = currentIdx >= i          // all stages up to & including current
+    const active = currentIdx === i         // exactly the current stage
+
+    // Per-stage sublabels: timestamps where available, else status text
+    let sublabel = null
+    if (i === 0) {
+      // placed — show order date
+      sublabel = order?.order_date ? fmtDate(order.order_date) : null
+    } else if (i === 1) {
+      // confirmed — show confirmation date if API provides it
+      sublabel = done
+        ? (order?.confirmed_at ? fmtDate(order.confirmed_at) : 'নিশ্চিত করা হয়েছে')
+        : 'অপেক্ষমাণ'
+    } else if (i === 2) {
+      // packed
+      sublabel = done ? 'প্যাকেজিং সম্পন্ন' : 'অপেক্ষমাণ'
+    } else if (i === 3) {
+      // shipped — show courier + tracking number
+      if (done && delivery?.courier_name) {
+        sublabel = delivery.courier_name +
+          (delivery.tracking_no ? ` · ${delivery.tracking_no}` : '')
+      } else {
+        sublabel = done ? 'কুরিয়ারে প্রেরণ করা হয়েছে' : 'অপেক্ষমাণ'
+      }
+    } else if (i === 4) {
+      // delivered — show actual or estimated date
+      if (delivery?.delivered_at) {
+        sublabel = fmtDate(delivery.delivered_at)
+      } else if (delivery?.est_date) {
+        sublabel = `আনু. ${fmtDate(delivery.est_date)}`
+      } else {
+        sublabel = done ? 'ডেলিভার্ড' : 'অপেক্ষমাণ'
+      }
+    }
+
+    return { icon: STAGE_ICONS[i], label: stage.label, sublabel, done, active }
+  })
 }
 
 // ── Review button component ──────────────────────────────────────────────
@@ -283,7 +294,12 @@ export default function OrderDetailPage() {
 
   const steps = order ? buildSteps(order, delivery) : []
 
-  const subtotal       = items.reduce((s, i) => s + Number(i.line_total || (i.unit_price || i.price || 0) * i.quantity), 0)
+  const subtotal       = items.reduce((s, i) => {
+    const lt = Number(i.line_total) || 0
+    const up = Number(i.unit_price) || Number(i.locked_price) || Number(i.price) || 0
+    const q  = Number(i.quantity) || 1
+    return s + (lt > 0 ? lt : up * q)
+  }, 0)
   const deliveryCharge = Number(delivery?.delivery_charge || 0)
   const discount       = Number(order?.discount_amount || 0)
   const total          = Number(order?.total_amount || subtotal + deliveryCharge - discount)
@@ -436,8 +452,12 @@ export default function OrderDetailPage() {
               </thead>
               <tbody>
                 {items.map((item, i) => {
-                  const unitPrice = Number(item.unit_price || item.price || 0)
-                  const lineTotal = Number(item.line_total || unitPrice * item.quantity)
+                  // Fix: unit_price may come as 0 or missing while line_total is correct.
+                  // Derive unit price from line_total / quantity as a fallback.
+                  const qty       = Number(item.quantity) || 1
+                  const lineTotal = Number(item.line_total) || 0
+                  const rawUnit   = Number(item.unit_price) || Number(item.locked_price) || Number(item.price) || 0
+                  const unitPrice = rawUnit > 0 ? rawUnit : (lineTotal > 0 ? lineTotal / qty : 0)
                   return (
                     <tr key={i} className="odp__tr">
                       <td className="odp__td odp__td--book">
@@ -462,7 +482,7 @@ export default function OrderDetailPage() {
                         </div>
                       </td>
                       <td className="odp__td odp__td--num">৳{fmtAmt(unitPrice)}</td>
-                      <td className="odp__td odp__td--num">×{toBn(item.quantity)}</td>
+                      <td className="odp__td odp__td--num">×{toBn(qty)}</td>
                       <td className="odp__td odp__td--num odp__td--total">৳{fmtAmt(lineTotal)}</td>
                       {isDelivered && (
                         <td className="odp__td odp__td--action">

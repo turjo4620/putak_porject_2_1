@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, BookOpen, Users, Package, ShoppingCart, 
   MessageSquare, BarChart3, LogOut, Menu, X,
-  FileText, Tag
+  FileText, Tag, Ticket
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import '../../styles/admin.css';
@@ -29,9 +29,10 @@ export default function AdminLayout() {
     { path: '/admin/books', icon: <BookOpen size={20} />, label: 'Books' },
     { path: '/admin/authors', icon: <FileText size={20} />, label: 'Authors' },
     { path: '/admin/publications', icon: <Package size={20} />, label: 'Publications' },
-    { path: '/admin/categories', icon: <Tag size={20} />, label: 'Categories' },
-    { path: '/admin/users', icon: <Users size={20} />, label: 'Users' },
-    { path: '/admin/orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
+    { path: '/admin/categories', icon: <Tag size={20} />,    label: 'Categories' },
+    { path: '/admin/coupons',    icon: <Ticket size={20} />, label: 'Coupons' },
+    { path: '/admin/users',      icon: <Users size={20} />,  label: 'Users' },
+    { path: '/admin/orders',     icon: <ShoppingCart size={20} />, label: 'Orders' },
     { path: '/admin/reviews', icon: <MessageSquare size={20} />, label: 'Reviews' },
     { path: '/admin/analytics', icon: <BarChart3 size={20} />, label: 'Analytics' }
   ];

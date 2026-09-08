@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { api } from '../api/http'
+import { ORDER_STAGES, statusIndex } from '../utils/orderStages'
 import './account-dashboard.css'
 
 // ── Bengali helpers ─────────────────────────────────────────────────────────
@@ -49,9 +50,9 @@ function statusStyle(s) {
 
 // ── Tracking modal ──────────────────────────────────────────────────────────
 function TrackingModal({ orderId, orderNumber, onClose }) {
-  const [data, setData]       = useState(null)
+  const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState('')
+  const [error,   setError]   = useState('')
 
   useEffect(() => {
     api.get(`/orders/${orderId}/tracking`)
@@ -60,22 +61,22 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
       .finally(() => setLoading(false))
   }, [orderId])
 
-  const delivery = data?.delivery
-
-  const steps = [
-    { key: 'ordered',    label: 'অর্ডার দেওয়া হয়েছে',  done: true },
-    { key: 'confirmed',  label: 'নিশ্চিত করা হয়েছে',     done: ['Confirmed','Paid','Processing','Shipped','Delivered'].includes(data?.order?.status) },
-    { key: 'dispatched', label: 'পাঠানো হয়েছে',           done: !!delivery?.dispatch_date },
-    { key: 'shipped',    label: 'পথে আছে',                done: delivery?.status === 'Shipped' || delivery?.status === 'Delivered' },
-    { key: 'delivered',  label: 'পৌঁছে গেছে',             done: !!delivery?.delivered_at },
-  ]
+  // Resolve current step index from the same helper used by OrderDetailPage
+  const currentStatus = data?.order?.status || ''
+  const currentIdx    = statusIndex(currentStatus)
+  const delivery      = data?.delivery
 
   return (
     <div className="tracking-modal-backdrop" onClick={onClose}>
       <div className="tracking-modal" onClick={e => e.stopPropagation()}>
+
         <div className="tracking-modal__header">
           <h3>ট্র্যাকিং — #{orderNumber}</h3>
-          <button className="tracking-modal__close" onClick={onClose} aria-label="বন্ধ করুন">✕</button>
+          <button
+            className="tracking-modal__close"
+            onClick={onClose}
+            aria-label="বন্ধ করুন"
+          >✕</button>
         </div>
 
         {loading && <p className="tracking-modal__info">লোড হচ্ছে...</p>}
@@ -83,30 +84,63 @@ function TrackingModal({ orderId, orderNumber, onClose }) {
 
         {!loading && !error && (
           <>
+            {/* ── 5-step timeline using ORDER_STAGES ── */}
             <ul className="tracking-timeline">
-              {steps.map((s, i) => (
-                <li key={s.key} className={`tracking-step ${s.done ? 'tracking-step--done' : ''}`}>
-                  <span className="tracking-step__dot" />
-                  {i < steps.length - 1 && <span className="tracking-step__line" />}
-                  <span className="tracking-step__label">{s.label}</span>
-                </li>
-              ))}
+              {ORDER_STAGES.map((stage, i) => {
+                const done   = currentIdx >= i
+                const active = currentIdx === i
+
+                // Sublabel: courier info on the shipped step, dates elsewhere
+                let sublabel = null
+                if (i === 3 && done && delivery?.courier_name) {
+                  sublabel = delivery.courier_name +
+                    (delivery.tracking_no ? ` · ${delivery.tracking_no}` : '')
+                } else if (i === 4 && done && delivery?.delivered_at) {
+                  sublabel = new Date(delivery.delivered_at)
+                    .toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })
+                }
+
+                return (
+                  <li
+                    key={stage.key}
+                    className={[
+                      'tracking-step',
+                      done   ? 'tracking-step--done'   : '',
+                      active ? 'tracking-step--active' : '',
+                    ].join(' ').trim()}
+                  >
+                    <span className="tracking-step__dot" />
+                    {i < ORDER_STAGES.length - 1 && (
+                      <span className={`tracking-step__line${done ? ' tracking-step__line--done' : ''}`} />
+                    )}
+                    <div className="tracking-step__content">
+                      <span className="tracking-step__label">{stage.label}</span>
+                      {sublabel && (
+                        <span className="tracking-step__sub">{sublabel}</span>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
 
+            {/* ── Delivery detail table (only when dispatched) ── */}
             {delivery ? (
               <table className="tracking-table">
                 <tbody>
-                  {delivery.tracking_no   && <tr><td>ট্র্যাকিং নম্বর</td><td><strong>{delivery.tracking_no}</strong></td></tr>}
-                  {delivery.courier_name  && <tr><td>কুরিয়ার</td><td>{delivery.courier_name}</td></tr>}
-                  {delivery.dispatch_date && <tr><td>প্রেরণের তারিখ</td><td>{new Date(delivery.dispatch_date).toLocaleDateString('bn-BD')}</td></tr>}
-                  {delivery.est_date      && <tr><td>আনুমানিক ডেলিভারি</td><td>{new Date(delivery.est_date).toLocaleDateString('bn-BD')}</td></tr>}
-                  {delivery.delivered_at  && <tr><td>ডেলিভারির তারিখ</td><td>{new Date(delivery.delivered_at).toLocaleDateString('bn-BD')}</td></tr>}
+                  {delivery.tracking_no    && <tr><td>ট্র্যাকিং নম্বর</td><td><strong>{delivery.tracking_no}</strong></td></tr>}
+                  {delivery.courier_name   && <tr><td>কুরিয়ার</td><td>{delivery.courier_name}</td></tr>}
+                  {delivery.dispatch_date  && <tr><td>প্রেরণের তারিখ</td><td>{new Date(delivery.dispatch_date).toLocaleDateString('bn-BD')}</td></tr>}
+                  {delivery.est_date       && <tr><td>আনুমানিক ডেলিভারি</td><td>{new Date(delivery.est_date).toLocaleDateString('bn-BD')}</td></tr>}
+                  {delivery.delivered_at   && <tr><td>ডেলিভারির তারিখ</td><td>{new Date(delivery.delivered_at).toLocaleDateString('bn-BD')}</td></tr>}
                   {delivery.delivery_charge && <tr><td>ডেলিভারি চার্জ</td><td>৳{delivery.delivery_charge}</td></tr>}
                   <tr><td>ডেলিভারি অবস্থা</td><td>{delivery.status || '—'}</td></tr>
                 </tbody>
               </table>
             ) : (
-              <p className="tracking-modal__info">এই অর্ডারটি এখনও প্রেরণ করা হয়নি। প্রস্তুত হলে ট্র্যাকিং তথ্য এখানে দেখা যাবে।</p>
+              <p className="tracking-modal__info">
+                এই অর্ডারটি এখনও প্রেরণ করা হয়নি। প্রস্তুত হলে ট্র্যাকিং তথ্য এখানে দেখা যাবে।
+              </p>
             )}
           </>
         )}

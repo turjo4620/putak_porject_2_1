@@ -1310,3 +1310,260 @@
   color: #991b1b;
 }
 .order-action-btn.cancel:hover { background: #fca5a5; }
+
+/* ============= Coupon Management ============= */
+
+/* Code cell — monospace bold with inline copy button */
+.coupon-code-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coupon-code-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.coupon-copy-btn {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+.coupon-copy-btn:hover {
+  border-color: var(--color-forest);
+  color: var(--color-forest);
+  background: rgba(30,58,47,0.06);
+}
+
+.coupon-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status badges */
+.coupon-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.coupon-badge--active {
+  background: rgba(30,58,47,0.1);
+  color: var(--color-forest);
+}
+.coupon-badge--inactive {
+  background: rgba(107,39,55,0.1);
+  color: var(--color-burgundy);
+}
+.coupon-badge--expired {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+.coupon-badge--scheduled {
+  background: rgba(181,120,60,0.12);
+  color: var(--color-copper);
+}
+
+/* Usage counter */
+.coupon-usage {
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+}
+.coupon-usage--full {
+  color: var(--color-burgundy);
+  font-weight: 700;
+}
+
+/* Active toggle switch */
+.coupon-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--border-color);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+  padding: 0;
+}
+.coupon-toggle--on {
+  background: var(--color-forest);
+}
+.coupon-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.coupon-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform var(--transition-fast);
+  pointer-events: none;
+}
+.coupon-toggle--on .coupon-toggle-thumb {
+  transform: translateX(18px);
+}
+
+/* Small variant used in table */
+.coupon-toggle--sm {
+  width: 34px;
+  height: 19px;
+  border-radius: 10px;
+}
+.coupon-toggle--sm .coupon-toggle-thumb {
+  width: 13px;
+  height: 13px;
+  top: 3px;
+  left: 3px;
+}
+.coupon-toggle--sm.coupon-toggle--on .coupon-toggle-thumb {
+  transform: translateX(15px);
+}
+
+/* Toggle row inside modal */
+.coupon-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+.coupon-toggle-hint {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+/* Field-level validation errors */
+.coupon-field-err {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 0.78rem;
+  color: var(--color-burgundy);
+  font-family: var(--font-sans);
+}
+
+/* Red border on invalid inputs */
+.input-error {
+  border-color: var(--color-burgundy) !important;
+  box-shadow: 0 0 0 3px rgba(107,39,55,0.08) !important;
+}
+
+/* Server-error banner inside modal */
+.coupon-server-err {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(107,39,55,0.08);
+  border: 1px solid rgba(107,39,55,0.2);
+  border-radius: var(--radius-md);
+  color: var(--color-burgundy);
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  margin-bottom: var(--space-4);
+}
+
+/* Stats pill bar above filters */
+.coupon-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.coupon-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  transition: all var(--transition-fast);
+}
+.coupon-stat:hover { border-color: var(--text-muted); }
+.coupon-stat--selected {
+  border-color: var(--color-forest);
+  background: rgba(30,58,47,0.06);
+}
+
+.coupon-stat__n {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.coupon-stat__l { color: var(--text-secondary); }
+
+.coupon-stat--active    .coupon-stat__n { color: var(--color-forest); }
+.coupon-stat--inactive  .coupon-stat__n { color: var(--color-burgundy); }
+.coupon-stat--expired   .coupon-stat__n { color: var(--text-muted); }
+.coupon-stat--scheduled .coupon-stat__n { color: var(--color-copper); }
+
+/* Toast notification */
+.coupon-toast {
+  position: fixed;
+  bottom: var(--space-8);
+  right: var(--space-8);
+  z-index: 2000;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-forest);
+  color: white;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  animation: coupon-toast-in 0.22s ease, coupon-toast-out 0.22s ease 2.4s forwards;
+  pointer-events: none;
+}
+
+@keyframes coupon-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes coupon-toast-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
